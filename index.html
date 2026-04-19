@@ -580,6 +580,18 @@
       <input class="field-input" id="cfgName" placeholder="e.g. maya01noir">
     </div>
     <div class="field-row">
+      <div class="field-label">Identity (trigger word, face description)</div>
+      <textarea class="field-input" id="cfgIdentity" rows="2" style="min-height:40px"></textarea>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Body (proportions, figure)</div>
+      <textarea class="field-input" id="cfgBody" rows="2" style="min-height:40px"></textarea>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Quality (realism, resolution tags)</div>
+      <textarea class="field-input" id="cfgQuality" rows="2" style="min-height:40px"></textarea>
+    </div>
+    <div class="field-row">
       <div class="field-label">AI Review character description</div>
       <textarea class="field-input" id="cfgAiDesc" rows="3" style="min-height:56px" placeholder="Describe your character for AI review context..."></textarea>
     </div>
@@ -696,14 +708,15 @@ function updateProjectDisplay() {
 // ===================== SETTINGS =====================
 function showSettingsModal() {
   document.getElementById('cfgName').value = config.name;
+  document.getElementById('cfgIdentity').value = config.identity || '';
+  document.getElementById('cfgBody').value = config.body || '';
+  document.getElementById('cfgQuality').value = config.quality || '';
   document.getElementById('cfgAiDesc').value = config.aiDesc;
-  // Restore reference previews
   ['face','body'].forEach(type => {
     const src = type === 'face' ? config.refFace : config.refBody;
-    const preview = document.getElementById('refFacePreview'.replace('face', type === 'face' ? 'face' : 'body').replace('Face','Face').replace('Body','Body'));
     const previewEl = document.getElementById(`ref${type.charAt(0).toUpperCase()+type.slice(1)}Preview`);
     const labelEl = document.getElementById(`ref${type.charAt(0).toUpperCase()+type.slice(1)}Label`);
-    if (src) {
+    if (src && previewEl) {
       previewEl.style.backgroundImage = `url(${src})`;
       previewEl.style.backgroundSize = 'cover';
       previewEl.style.backgroundPosition = 'center';
@@ -717,8 +730,10 @@ function closeSettingsModal() {
 }
 function saveSettings() {
   config.name = document.getElementById('cfgName').value.trim() || 'My AI Model';
+  config.identity = document.getElementById('cfgIdentity').value.trim();
+  config.body = document.getElementById('cfgBody').value.trim();
+  config.quality = document.getElementById('cfgQuality').value.trim();
   config.aiDesc = document.getElementById('cfgAiDesc').value.trim();
-  // refFace and refBody are saved directly by previewRef()
   try { localStorage.setItem('aiCaptionConfig', JSON.stringify(config)); } catch(e) {}
   updateProjectDisplay();
   document.getElementById('bulkDefault').value = buildDefaultCaption();
