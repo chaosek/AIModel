@@ -555,7 +555,7 @@
         <div id="aiReviewResult"></div>
       </div>
 
-      <!-- CAPTION FIELDS -->
+      <!-- PROMPT + EXPORT -->
       <div class="fields-area" id="fieldsArea">
         <div class="empty-state">
           <div class="empty-icon">✏️</div>
@@ -584,21 +584,6 @@
           <input class="db-input" id="dbNewTags" placeholder="Tags (comma separated)">
           <button class="btn" style="width:100%" onclick="addDbItem()">＋ Add</button>
         </div>
-      </div>
-    </div>
-
-    <!-- EXPORT -->
-    <div class="export-panel">
-      <div class="export-tabs">
-        <button class="export-tab active" data-fmt="comfy" onclick="setExportFmt('comfy',this)">ComfyUI/Flux</button>
-        <button class="export-tab" data-fmt="chatgpt" onclick="setExportFmt('chatgpt',this)">ChatGPT</button>
-        <button class="export-tab" data-fmt="copilot" onclick="setExportFmt('copilot',this)">Copilot</button>
-        <button class="export-tab" data-fmt="zonner" onclick="setExportFmt('zonner',this)">Zonner</button>
-      </div>
-      <div class="export-output" id="exportOutput">— select an image —</div>
-      <div class="export-actions">
-        <button class="btn" onclick="copyExport()">📋 Copy</button>
-        <button class="btn accent" onclick="saveTxt()">💾 Save .txt</button>
       </div>
     </div>
   </div>
@@ -806,6 +791,13 @@ function previewRef(type, input) {
 function buildDefaultCaption() {
   return [config.identity, config.body, config.quality].filter(Boolean).join(', ');
 }
+function copyCaption() {
+  if (!currentId) return;
+  const img = project.images.find(i => i.id === currentId);
+  if (!img) return;
+  const prompt = (img.caption && img.caption.prompt) ? img.caption.prompt : buildCaption(img, 'comfy');
+  navigator.clipboard.writeText(prompt).then(() => notify('Copied!', 'success'));
+}
 
 // ===================== OPEN PROJECT =====================
 async function openProject() {
@@ -887,37 +879,8 @@ function guessSource(name) {
 
 // ===================== CAPTION PARSING =====================
 function parseCaption(raw) {
-  if (!raw || !raw.trim()) return {identity:'', body:'', pose:'', outfit:'', scene:'', lighting:'', photo:'', quality:''};
-  const tags = raw.split(',').map(t => t.trim()).filter(Boolean);
-  const bodyKw = ['figure','bust','waist','legs','athletic','slender','body','petite','curvy','height','proportions'];
-  const poseKw = ['standing','sitting','walking','lying','kneeling','crouching','leaning','pose','posture','stride','mid-step','seated','reclined','turned','facing','arm raised','hand on','legs crossed'];
-  const outfitKw = ['latex','dress','outfit','wearing','bodysuit','jeans','skirt','top','bikini','swimwear','jacket','corset','boots','heels','shirt','pants','catsuit','leggings','gown','shorts','stockings','tights','sandals'];
-  const sceneKw = ['background','studio','city','beach','forest','interior','outdoor','indoor','setting','room','street','landscape','rooftop','parking','bedroom','cafe','pool','hotel'];
-  const lightingKw = ['lighting','daylight','light setup','rim light','key light','ambient light','golden hour','backlight','side light','shadow','highlight','cinematic light','soft light','dramatic light','warm light','cool light'];
-  const photoKw = ['shot','view','portrait','full body','half body','angle','bokeh','depth of field','close-up','wide','medium','composition','lens','85mm','frame','crop'];
-  const qualityKw = ['photorealistic','realistic','8k','4k','hd','sharp focus','ultra detailed','high detail','professional','magazine','editorial','no watermark','no text','no distortion'];
-  const buckets = {identity:[], body:[], pose:[], outfit:[], scene:[], lighting:[], photo:[], quality:[]};
-  tags.forEach(t => {
-    const tl = t.toLowerCase();
-    if (qualityKw.some(k=>tl.includes(k))) buckets.quality.push(t);
-    else if (lightingKw.some(k=>tl.includes(k))) buckets.lighting.push(t);
-    else if (photoKw.some(k=>tl.includes(k))) buckets.photo.push(t);
-    else if (sceneKw.some(k=>tl.includes(k))) buckets.scene.push(t);
-    else if (outfitKw.some(k=>tl.includes(k))) buckets.outfit.push(t);
-    else if (poseKw.some(k=>tl.includes(k))) buckets.pose.push(t);
-    else if (bodyKw.some(k=>tl.includes(k))) buckets.body.push(t);
-    else buckets.identity.push(t);
-  });
-  return {
-    identity: buckets.identity.join(', '),
-    body: buckets.body.join(', '),
-    pose: buckets.pose.join(', '),
-    outfit: buckets.outfit.join(', '),
-    scene: buckets.scene.join(', '),
-    lighting: buckets.lighting.join(', '),
-    photo: buckets.photo.join(', '),
-    quality: buckets.quality.join(', '),
-  };
+  if (!raw || !raw.trim()) return {prompt: ''};
+  return {prompt: raw.replace(/\r\n/g, ' ').replace(/\r|\n/g, ' ').replace(/\s+/g, ' ').trim()};
 }
 
 // ===================== GALLERY =====================
@@ -952,7 +915,10 @@ function renderGallery() {
 }
 
 function hasMeaningfulCaption(img) {
-  return Object.values(img.caption).some(v => v.trim().length > 0);
+  if (!img.caption) return false;
+  if (img.caption.prompt) return img.caption.prompt.trim().length > 0;
+  // backwards compat
+  return Object.values(img.caption).some(v => v && v.trim().length > 0);
 }
 function srcLabel(s) {
   return {chatgpt:'GPT', zonner:'ZNR', copilot:'CPL', comfyui:'FLX', unknown:'?'}[s] || '?';
@@ -1004,36 +970,74 @@ function selectImage(id) {
 }
 
 // ===================== FIELDS =====================
-const FIELD_DEFS = [
-  { key:'identity', icon:'👤', name:'Identity',  placeholder:'trigger word, face description, hair, eyes, makeup...', rows:4 },
-  { key:'body',     icon:'🧍', name:'Body',      placeholder:'figure, proportions, height...', rows:3 },
-  { key:'pose',     icon:'🤸', name:'Pose',      placeholder:'standing, walking, sitting, crouching...', rows:3 },
-  { key:'outfit',   icon:'👗', name:'Outfit',    placeholder:'clothing, material, colors...', rows:3 },
-  { key:'scene',    icon:'🌆', name:'Scene',     placeholder:'background, setting, location...', rows:3 },
-  { key:'lighting', icon:'💡', name:'Lighting',  placeholder:'natural daylight, cinematic, dramatic...', rows:3 },
-  { key:'photo',    icon:'📷', name:'Photo',     placeholder:'full body shot, 85mm lens, depth of field...', rows:3 },
-  { key:'quality',  icon:'✨', name:'Quality',   placeholder:'photorealistic, 8k, sharp focus...', rows:3 },
-];
-
 function renderFields(img) {
   const area = document.getElementById('fieldsArea');
-  area.innerHTML = FIELD_DEFS.map(def => `
-    <div style="display:flex;flex-direction:column;gap:2px">
-      <div style="font-size:9px;font-family:var(--font-mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px">${def.icon} ${def.name}</div>
-      <textarea class="field-input" id="field_${def.key}" rows="${def.rows}" placeholder="${def.placeholder}"
-        oninput="onFieldChange('${def.key}')">${escH((img.caption[def.key]||'').trim())}</textarea>
-    </div>
-  `).join('');
+  const prompt = (img.caption && img.caption.prompt) ? img.caption.prompt :
+    // backwards compat: join old fields
+    Object.values(img.caption||{}).filter(v=>v&&v.trim()).join(', ');
+
+  const r = img.aiReview || {};
+  const kohya = r.caption_kohya || '';
+  const chatgpt = r.caption_chatgpt || '';
+  const uid = img.id.replace(/[^a-z0-9]/gi,'');
+
+  area.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:6px;height:100%;padding:8px">
+      <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-height:0">
+        <div style="font-size:9px;font-family:var(--font-mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px">📝 Prompt</div>
+        <textarea class="field-input" id="field_prompt" style="flex:1;min-height:80px;resize:none"
+          oninput="onPromptChange()">${escH(prompt.trim())}</textarea>
+      </div>
+
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:9px;font-family:var(--font-mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px">⚙ Kohya / Flux</span>
+            <button onclick="copyText('${uid}_kohya')" style="font-size:9px;font-family:var(--font-mono);color:var(--accent2);background:none;border:none;cursor:pointer;padding:0">📋 copy</button>
+          </div>
+          <textarea id="${uid}_kohya" class="field-input" rows="5" style="resize:none;font-size:10px;color:var(--text3)"
+            oninput="onAiCaptionEdit('kohya','${uid}_kohya')">${escH(kohya)}</textarea>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:3px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:9px;font-family:var(--font-mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px">💬 ChatGPT</span>
+            <button onclick="copyText('${uid}_chatgpt')" style="font-size:9px;font-family:var(--font-mono);color:var(--accent2);background:none;border:none;cursor:pointer;padding:0">📋 copy</button>
+          </div>
+          <textarea id="${uid}_chatgpt" class="field-input" rows="5" style="resize:none;font-size:10px;color:var(--text3)"
+            oninput="onAiCaptionEdit('chatgpt','${uid}_chatgpt')">${escH(chatgpt)}</textarea>
+        </div>
+      </div>
+    </div>`;
+}
+
+function onPromptChange() {
+  if (!currentId) return;
+  const img = project.images.find(i => i.id === currentId);
+  if (!img) return;
+  if (!img.caption) img.caption = {};
+  img.caption.prompt = document.getElementById('field_prompt').value.trim();
+  updateExport();
+  updateStats();
+}
+
+function onAiCaptionEdit(type, elId) {
+  if (!currentId) return;
+  const img = project.images.find(i => i.id === currentId);
+  if (!img || !img.aiReview) return;
+  const val = document.getElementById(elId)?.value || '';
+  if (type === 'kohya') img.aiReview.caption_kohya = val;
+  else img.aiReview.caption_chatgpt = val;
+}
+
+function copyText(elId) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => notify('Copied!', 'success'));
 }
 
 // ===================== META =====================
 function onFieldChange(key) {
-  if (!currentId) return;
-  const img = project.images.find(i => i.id === currentId);
-  if (!img) return;
-  img.caption[key] = document.getElementById('field_' + key).value.trim();
-  updateExport();
-  updateStats();
+  onPromptChange();
 }
 
 function onMetaChange() {
@@ -1063,37 +1067,15 @@ function setTraining(val) {
 
 // ===================== EXPORT =====================
 function buildCaption(img, fmt) {
-  const c = img.caption;
-  const parts = [c.identity, c.body, c.pose, c.outfit, c.scene, c.lighting, c.photo, c.quality].map(p => (p||'').trim()).filter(Boolean);
-  if (fmt === 'comfy') return parts.join(', ');
-  if (fmt === 'chatgpt') {
-    let out = '';
-    if (c.identity) out += `A photorealistic image of ${c.identity}. `;
-    if (c.body) out += `${c.body}. `;
-    if (c.pose) out += `${c.pose}. `;
-    if (c.outfit) out += `Wearing ${c.outfit}. `;
-    if (c.scene) out += `Setting: ${c.scene}. `;
-    if (c.lighting) out += `${c.lighting}. `;
-    if (c.photo) out += `${c.photo}. `;
-    if (c.quality) out += `${c.quality}.`;
-    return out.trim();
-  }
-  if (fmt === 'copilot') {
-    return parts.map((p, i) => i === 3 && p ? 'wearing ' + p : p).join(', ');
-  }
-  if (fmt === 'zonner') {
-    let out = 'Generate a photorealistic image: ';
-    if (c.identity) out += c.identity;
-    if (c.body) out += ', ' + c.body;
-    if (c.pose) out += ', ' + c.pose;
-    if (c.outfit) out += ', dressed in ' + c.outfit;
-    if (c.scene) out += '. Scene: ' + c.scene;
-    if (c.lighting) out += '. Lighting: ' + c.lighting;
-    if (c.photo) out += '. Style: ' + c.photo;
-    if (c.quality) out += '. Quality: ' + c.quality;
-    return out + '.';
-  }
-  return parts.join(', ');
+  const prompt = (img.caption && img.caption.prompt)
+    ? img.caption.prompt
+    : Object.values(img.caption||{}).filter(v=>v&&v.trim()).join(', ');
+  if (!prompt.trim()) return '';
+  if (fmt === 'comfy') return prompt;
+  if (fmt === 'chatgpt') return `A photorealistic image of ${prompt}.`;
+  if (fmt === 'copilot') return prompt;
+  if (fmt === 'zonner') return `Generate a photorealistic image: ${prompt}.`;
+  return prompt;
 }
 
 function setExportFmt(fmt, el) {
@@ -1172,7 +1154,7 @@ function clearCaption() {
   if (!currentId) return;
   const img = project.images.find(i => i.id === currentId);
   if (!img) return;
-  img.caption = {identity:'', body:'', pose:'', outfit:'', scene:'', lighting:'', photo:'', quality:''};
+  img.caption = {prompt: ''};
   renderFields(img); updateExport(); updateStats();
 }
 
@@ -1451,23 +1433,13 @@ function renderAiResult(r, el) {
         </div>`).join('')}
       </div>
       ${r.notes ? `<div class="ai-notes">${escH(r.notes)}</div>` : ''}
-      ${r.caption_kohya ? `
-        <div class="ai-caption-box">
-          <div class="ai-caption-label">
-            <span>Kohya / Flux</span>
-            <button class="ai-caption-copy" onclick="copyAiCaption('kohya_${uid}')">📋 copy</button>
-          </div>
-          <div class="ai-caption-text" id="kohya_${uid}" onclick="copyAiCaption('kohya_${uid}')">${escH(r.caption_kohya)}</div>
-        </div>` : ''}
-      ${r.caption_chatgpt ? `
-        <div class="ai-caption-box">
-          <div class="ai-caption-label">
-            <span>ChatGPT prompt</span>
-            <button class="ai-caption-copy" onclick="copyAiCaption('chatgpt_${uid}')">📋 copy</button>
-          </div>
-          <div class="ai-caption-text" id="chatgpt_${uid}" onclick="copyAiCaption('chatgpt_${uid}')">${escH(r.caption_chatgpt)}</div>
-        </div>` : ''}
     </div>`;
+  // refresh fields to show updated kohya/chatgpt
+  if (currentId) {
+    const img = project.images.find(i => i.id === currentId);
+    if (img) renderFields(img);
+  }
+}
 }
 
 function copyAiCaption(id) {
@@ -1525,21 +1497,10 @@ function applyDbItem(idx) {
   if (!currentId) { notify('Select an image first', 'error'); return; }
   const item = project.db[currentDbTab][idx];
   if (!item) return;
-  // Map db tab to caption field
-  const keyMap = {
-    poses:    'pose',
-    outfits:  'outfit',
-    scenes:   'scene',
-    identity: 'identity',
-    lighting: 'lighting',
-    photo:    'photo',
-    quality:  'quality'
-  };
-  const key = keyMap[currentDbTab] || 'identity';
-  const el = document.getElementById('field_' + key);
+  const el = document.getElementById('field_prompt');
   if (!el) return;
   el.value = el.value.trim() ? el.value.trim() + ', ' + item.tags : item.tags;
-  onFieldChange(key);
+  onPromptChange();
   notify('Added: ' + item.name, 'success');
 }
 function addDbItem() {
