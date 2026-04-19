@@ -526,10 +526,11 @@
 
   <div class="resizer" id="r2"></div>
 
-  <!-- COL 3: Preview image -->
+  <!-- COL 3: Preview image + metadata -->
   <div class="col-preview" id="colPreview">
     <div id="previewPlaceholder" class="preview-placeholder">Select an image</div>
     <img id="previewImg" class="preview-img" style="display:none" alt="">
+    <div id="imgMeta" style="display:none;margin-top:6px;display:flex;flex-direction:column;gap:3px"></div>
   </div>
 
   <div class="resizer" id="r3"></div>
@@ -600,14 +601,14 @@
     <div style="display:flex;gap:8px;align-items:flex-start;margin-top:4px">
       <div style="flex:1;display:flex;flex-direction:column;gap:4px">
         <div class="field-label">Face reference</div>
-        <div id="refFacePreview" style="width:100%;height:80px;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);cursor:pointer;overflow:hidden;background-size:cover;background-position:center" onclick="document.getElementById('cfgRefFace').click()">
+        <div id="refFacePreview" style="width:100%;aspect-ratio:2/3;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);cursor:pointer;overflow:hidden;background-size:cover;background-position:center" onclick="document.getElementById('cfgRefFace').click()">
           <span id="refFaceLabel">Click to upload</span>
         </div>
         <input type="file" id="cfgRefFace" accept="image/*" style="display:none" onchange="previewRef('face',this)">
       </div>
       <div style="flex:1;display:flex;flex-direction:column;gap:4px">
         <div class="field-label">Body reference</div>
-        <div id="refBodyPreview" style="width:100%;height:80px;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);cursor:pointer;overflow:hidden;background-size:cover;background-position:center" onclick="document.getElementById('cfgRefBody').click()">
+        <div id="refBodyPreview" style="width:100%;aspect-ratio:2/3;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);cursor:pointer;overflow:hidden;background-size:cover;background-position:center" onclick="document.getElementById('cfgRefBody').click()">
           <span id="refBodyLabel">Click to upload</span>
         </div>
         <input type="file" id="cfgRefBody" accept="image/*" style="display:none" onchange="previewRef('body',this)">
@@ -627,7 +628,7 @@
     <p>Apply a default caption to all images that currently have no caption. Existing captions are not affected.</p>
     <div class="field-row" style="margin-bottom:8px">
       <div class="field-label">Default caption for uncaptioned images</div>
-      <textarea class="field-input" id="bulkDefault" rows="4" style="min-height:80px"></textarea>
+      <textarea class="field-input" id="bulkDefault" rows="4" style="min-aspect-ratio:2/3"></textarea>
     </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeBulkModal()">Cancel</button>
@@ -944,6 +945,44 @@ function selectImage(id) {
   } else {
     doneBtn.textContent = '✓ Mark as Processed';
     doneBtn.style.background = '';
+  }
+
+  loadImgMeta(img);
+}
+
+async function loadImgMeta(img) {
+  const el = document.getElementById('imgMeta');
+  if (!el) return;
+
+  try {
+    const file = img.fileHandle ? await img.fileHandle.getFile() : null;
+    const sizeKB = file ? (file.size / 1024).toFixed(0) + ' KB' : '—';
+    const sizeMB = file && file.size > 1024*1024 ? ' (' + (file.size/1024/1024).toFixed(2) + ' MB)' : '';
+    const ext = img.name.split('.').pop().toUpperCase();
+
+    const dims = await new Promise(res => {
+      const i = new Image();
+      i.onload = () => res({w: i.naturalWidth, h: i.naturalHeight});
+      i.onerror = () => res(null);
+      i.src = img.src;
+    });
+
+    const rows = [
+      ['Format', ext],
+      ['Size', sizeKB + sizeMB],
+      ['Resolution', dims ? `${dims.w} × ${dims.h}` : '—'],
+      ['Aspect', dims ? (dims.w / dims.h).toFixed(2) : '—'],
+      ['MP', dims ? ((dims.w * dims.h) / 1000000).toFixed(1) + ' MP' : '—'],
+    ];
+
+    el.style.display = 'flex';
+    el.innerHTML = rows.map(([label, val]) => `
+      <div style="display:flex;gap:6px;align-items:baseline">
+        <span style="font-size:9px;font-family:var(--font-mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;width:68px;flex-shrink:0">${label}</span>
+        <span style="font-size:11px;font-family:var(--font-mono);color:var(--text2)">${val}</span>
+      </div>`).join('');
+  } catch(e) {
+    el.style.display = 'none';
   }
 }
 
