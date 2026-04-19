@@ -148,80 +148,18 @@
   }
   input[type=text].search:focus { outline: none; border-color: var(--accent); }
 
-  /* MAIN LAYOUT */
+  /* MAIN LAYOUT - 4 columns */
   .main {
     display: flex;
     flex: 1;
     overflow: hidden;
   }
 
-  /* LEFT PANEL - image + meta + buttons */
-  .left-panel {
-    width: 200px;
+  /* COL 1: Gallery */
+  .col-gallery {
+    width: 180px;
     flex-shrink: 0;
     border-right: 1px solid var(--border);
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-    padding: 8px;
-    gap: 6px;
-  }
-  .left-panel::-webkit-scrollbar { width: 3px; }
-  .left-panel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-
-  /* CENTER PANEL - prompt + kohya/chatgpt + gallery */
-  .center-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border-right: 1px solid var(--border);
-  }
-  .center-top {
-    flex-shrink: 0;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    border-bottom: 1px solid var(--border);
-  }
-  .captions-row {
-    display: flex;
-    gap: 6px;
-  }
-  .caption-block {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-  .caption-block-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .caption-block-label {
-    font-size: 9px;
-    font-family: var(--font-mono);
-    color: var(--text3);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .caption-copy-btn {
-    font-size: 9px;
-    font-family: var(--font-mono);
-    color: var(--accent2);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    transition: opacity 0.15s;
-  }
-  .caption-copy-btn:hover { opacity: 0.7; }
-
-  /* GALLERY - bottom of center */
-  .gallery-section {
-    flex: 1;
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -229,38 +167,48 @@
   .gallery-scroll {
     overflow-y: auto;
     flex: 1;
-    padding: 6px;
+    padding: 5px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 4px;
     align-content: start;
   }
-  .gallery-scroll::-webkit-scrollbar { width: 4px; }
+  .gallery-scroll::-webkit-scrollbar { width: 3px; }
   .gallery-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
-  /* RIGHT PANEL - library + ai review */
-  .right-panel {
-    width: 220px;
+  /* COL 2: Detail */
+  .col-detail {
+    width: 190px;
     flex-shrink: 0;
+    border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-  }
-  .right-top {
-    flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    border-bottom: 1px solid var(--border);
-  }
-  .right-bottom {
-    flex-shrink: 0;
-    overflow-y: auto;
-    max-height: 280px;
+    gap: 6px;
     padding: 8px;
+    overflow-y: auto;
   }
-  .right-bottom::-webkit-scrollbar { width: 3px; }
-  .right-bottom::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .col-detail::-webkit-scrollbar { width: 3px; }
+  .col-detail::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* COL 3: Prompts */
+  .col-prompts {
+    flex: 1;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 8px;
+    gap: 6px;
+  }
+
+  /* COL 4: Library */
+  .col-library {
+    width: 210px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
 
   .thumb {
@@ -355,6 +303,12 @@
   .preview-btns { display: flex; flex-direction: column; gap: 3px; }
 
   /* TEXTAREA */
+  .caption-copy-btn {
+    font-size: 9px; font-family: var(--font-mono); color: var(--accent2);
+    background: none; border: none; cursor: pointer; padding: 0; transition: opacity 0.15s;
+  }
+  .caption-copy-btn:hover { opacity: 0.7; }
+
   textarea.field-input, input.field-input {
     background: var(--surface2); border: 1px solid var(--border); color: var(--text);
     padding: 4px 7px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px;
@@ -440,6 +394,7 @@
   .modal {
     background: var(--surface); border: 1px solid var(--border2);
     border-radius: 8px; padding: 20px; min-width: 380px; max-width: 560px; width: 90vw;
+    max-height: 90vh; overflow-y: auto;
   }
   .modal h3 { font-family: var(--font-display); font-size: 20px; color: var(--accent); margin-bottom: 10px; letter-spacing: 1px; }
   .modal p { color: var(--text2); font-size: 12px; margin-bottom: 10px; line-height: 1.6; }
@@ -534,8 +489,18 @@
 
 <div class="main">
 
-  <!-- LEFT: image + meta + actions -->
-  <div class="left-panel">
+  <!-- COL 1: Gallery -->
+  <div class="col-gallery">
+    <div class="gallery-scroll" id="galleryGrid">
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">🖼</div>
+        <span>Open project</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- COL 2: Image detail + meta + actions -->
+  <div class="col-detail">
     <div id="previewPlaceholder" class="preview-placeholder">Select an image</div>
     <img id="previewImg" class="preview-img" style="display:none" alt="">
 
@@ -567,58 +532,44 @@
         <span class="tag-chip" id="trainNo" onclick="setTraining(false)">✗ No</span>
       </div>
     </div>
-
     <div class="preview-btns" style="margin-top:4px">
-      <button class="btn" onclick="copyCaption()">📋 Copy prompt</button>
       <button class="btn" onclick="saveTxt()">💾 Save .txt</button>
       <button class="btn purple" id="aiBtnMain" onclick="runAiReview()">🤖 AI Review</button>
       <button class="btn green" id="doneBtn" onclick="markDone()">✓ Mark Processed</button>
       <button class="btn danger" onclick="clearCaption()">✕ Clear</button>
     </div>
+    <div id="aiReviewResult" style="margin-top:4px"></div>
   </div>
 
-  <!-- CENTER: prompt + kohya/chatgpt + gallery -->
-  <div class="center-panel">
-    <div class="center-top" id="fieldsArea">
-      <div class="empty-state" style="padding:20px">
-        <div class="empty-icon">✏️</div>
-        <span>Select an image</span>
-      </div>
-    </div>
-    <div class="gallery-section">
-      <div class="gallery-scroll" id="galleryGrid">
-        <div class="empty-state" style="grid-column:1/-1">
-          <div class="empty-icon">🖼</div>
-          <span>Open a project folder to begin</span>
-        </div>
-      </div>
+  <!-- COL 3: Prompts -->
+  <div class="col-prompts" id="fieldsArea">
+    <div class="empty-state">
+      <div class="empty-icon">✏️</div>
+      <span>Select an image</span>
     </div>
   </div>
 
-  <!-- RIGHT: library + ai review -->
-  <div class="right-panel">
-    <div class="right-top">
-      <div class="db-header" style="display:flex;align-items:center;justify-content:space-between">
-        <span>📚 Library</span>
-        <button class="btn" style="padding:2px 8px;font-size:10px;border-color:var(--accent2);color:var(--accent2)" onclick="importLibraryJson()">⬆ Import</button>
-      </div>
-      <div class="db-tabs">
-        <div class="db-tab active" data-dbtab="poses" onclick="switchDbTab('poses',this)">Poses</div>
-        <div class="db-tab" data-dbtab="outfits" onclick="switchDbTab('outfits',this)">Outfits</div>
-        <div class="db-tab" data-dbtab="scenes" onclick="switchDbTab('scenes',this)">Scenes</div>
-        <div class="db-tab" data-dbtab="identity" onclick="switchDbTab('identity',this)">Identity</div>
-        <div class="db-tab" data-dbtab="lighting" onclick="switchDbTab('lighting',this)">Light</div>
-        <div class="db-tab" data-dbtab="photo" onclick="switchDbTab('photo',this)">Photo</div>
-        <div class="db-tab" data-dbtab="quality" onclick="switchDbTab('quality',this)">Quality</div>
-      </div>
-      <div class="db-content" id="dbContent"></div>
-      <div class="db-add-form">
-        <input class="db-input" id="dbNewName" placeholder="Name">
-        <input class="db-input" id="dbNewTags" placeholder="Tags (comma separated)">
-        <button class="btn" style="width:100%" onclick="addDbItem()">＋ Add</button>
-      </div>
+  <!-- COL 4: Library -->
+  <div class="col-library">
+    <div class="db-header" style="display:flex;align-items:center;justify-content:space-between">
+      <span>📚 Library</span>
+      <button class="btn" style="padding:2px 8px;font-size:10px;border-color:var(--accent2);color:var(--accent2)" onclick="importLibraryJson()">⬆ Import</button>
     </div>
-    <div class="right-bottom" id="aiReviewResult"></div>
+    <div class="db-tabs">
+      <div class="db-tab active" data-dbtab="poses" onclick="switchDbTab('poses',this)">Poses</div>
+      <div class="db-tab" data-dbtab="outfits" onclick="switchDbTab('outfits',this)">Outfits</div>
+      <div class="db-tab" data-dbtab="scenes" onclick="switchDbTab('scenes',this)">Scenes</div>
+      <div class="db-tab" data-dbtab="identity" onclick="switchDbTab('identity',this)">Identity</div>
+      <div class="db-tab" data-dbtab="lighting" onclick="switchDbTab('lighting',this)">Light</div>
+      <div class="db-tab" data-dbtab="photo" onclick="switchDbTab('photo',this)">Photo</div>
+      <div class="db-tab" data-dbtab="quality" onclick="switchDbTab('quality',this)">Quality</div>
+    </div>
+    <div class="db-content" id="dbContent"></div>
+    <div class="db-add-form">
+      <input class="db-input" id="dbNewName" placeholder="Name">
+      <input class="db-input" id="dbNewTags" placeholder="Tags (comma separated)">
+      <button class="btn" style="width:100%" onclick="addDbItem()">＋ Add</button>
+    </div>
   </div>
 
 </div>
@@ -654,17 +605,17 @@
     <div class="field-row">
       <div class="meta-label" style="margin-bottom:4px">Reference Images (included in every review ZIP)</div>
     </div>
-    <div class="field-row" style="flex-direction:row;gap:8px">
+    <div class="field-row" style="flex-direction:row;gap:8px;align-items:flex-start">
       <div style="flex:1;display:flex;flex-direction:column;gap:4px">
         <div class="field-label">Face reference</div>
-        <div id="refFacePreview" style="width:100%;aspect-ratio:1;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);cursor:pointer;overflow:hidden" onclick="document.getElementById('cfgRefFace').click()">
+        <div id="refFacePreview" style="width:100%;height:80px;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);cursor:pointer;overflow:hidden;background-size:cover;background-position:center" onclick="document.getElementById('cfgRefFace').click()">
           <span id="refFaceLabel">Click to upload</span>
         </div>
         <input type="file" id="cfgRefFace" accept="image/*" style="display:none" onchange="previewRef('face',this)">
       </div>
       <div style="flex:1;display:flex;flex-direction:column;gap:4px">
         <div class="field-label">Body reference</div>
-        <div id="refBodyPreview" style="width:100%;aspect-ratio:1;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);cursor:pointer;overflow:hidden" onclick="document.getElementById('cfgRefBody').click()">
+        <div id="refBodyPreview" style="width:100%;height:80px;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);cursor:pointer;overflow:hidden;background-size:cover;background-position:center" onclick="document.getElementById('cfgRefBody').click()">
           <span id="refBodyLabel">Click to upload</span>
         </div>
         <input type="file" id="cfgRefBody" accept="image/*" style="display:none" onchange="previewRef('body',this)">
@@ -1015,30 +966,35 @@ function renderFields(img) {
   const uid = img.id.replace(/[^a-z0-9]/gi,'');
 
   area.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:5px">
-      <div style="display:flex;flex-direction:column;gap:3px">
-        <div style="font-size:9px;font-family:var(--font-mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px">📝 Prompt</div>
-        <textarea class="field-input" id="field_prompt" rows="10" style="resize:none"
+    <div style="display:flex;flex-direction:column;gap:6px;height:100%">
+
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-height:0">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:9px;font-family:var(--font-mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px">📝 Master Prompt</span>
+          <button class="caption-copy-btn" onclick="copyText('field_prompt')">📋 copy</button>
+        </div>
+        <textarea class="field-input" id="field_prompt" style="flex:1;resize:none;min-height:60px"
           oninput="onPromptChange()">${escH(prompt)}</textarea>
       </div>
-      <div style="display:flex;gap:6px">
-        <div class="caption-block">
-          <div class="caption-block-header">
-            <span class="caption-block-label">⚙ Kohya / Flux</span>
-            <button class="caption-copy-btn" onclick="copyText('${uid}_kohya')">📋 copy</button>
-          </div>
-          <textarea id="${uid}_kohya" class="field-input" rows="5" style="resize:none;font-size:10px"
-            oninput="onAiCaptionEdit('kohya','${uid}_kohya')">${escH(kohya)}</textarea>
+
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-height:0">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:9px;font-family:var(--font-mono);color:var(--accent2);text-transform:uppercase;letter-spacing:1px">💬 ChatGPT Prompt</span>
+          <button class="caption-copy-btn" onclick="copyText('${uid}_chatgpt')">📋 copy</button>
         </div>
-        <div class="caption-block">
-          <div class="caption-block-header">
-            <span class="caption-block-label">💬 ChatGPT</span>
-            <button class="caption-copy-btn" onclick="copyText('${uid}_chatgpt')">📋 copy</button>
-          </div>
-          <textarea id="${uid}_chatgpt" class="field-input" rows="5" style="resize:none;font-size:10px"
-            oninput="onAiCaptionEdit('chatgpt','${uid}_chatgpt')">${escH(chatgpt)}</textarea>
-        </div>
+        <textarea id="${uid}_chatgpt" class="field-input" style="flex:1;resize:none;font-size:10px;min-height:60px"
+          oninput="onAiCaptionEdit('chatgpt','${uid}_chatgpt')">${escH(chatgpt)}</textarea>
       </div>
+
+      <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-height:0">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:9px;font-family:var(--font-mono);color:var(--green);text-transform:uppercase;letter-spacing:1px">⚙ Kohya / Flux Training</span>
+          <button class="caption-copy-btn" onclick="copyText('${uid}_kohya')">📋 copy</button>
+        </div>
+        <textarea id="${uid}_kohya" class="field-input" style="flex:1;resize:none;font-size:10px;min-height:60px"
+          oninput="onAiCaptionEdit('kohya','${uid}_kohya')">${escH(kohya)}</textarea>
+      </div>
+
     </div>`;
 }
 
