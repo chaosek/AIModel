@@ -155,26 +155,113 @@
     overflow: hidden;
   }
 
-  /* GALLERY */
-  .gallery-panel {
-    width: 272px;
+  /* LEFT PANEL - image + meta + buttons */
+  .left-panel {
+    width: 200px;
     flex-shrink: 0;
     border-right: 1px solid var(--border);
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
+    padding: 8px;
+    gap: 6px;
+  }
+  .left-panel::-webkit-scrollbar { width: 3px; }
+  .left-panel::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* CENTER PANEL - prompt + kohya/chatgpt + gallery */
+  .center-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
+    border-right: 1px solid var(--border);
+  }
+  .center-top {
+    flex-shrink: 0;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .captions-row {
+    display: flex;
+    gap: 6px;
+  }
+  .caption-block {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .caption-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .caption-block-label {
+    font-size: 9px;
+    font-family: var(--font-mono);
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .caption-copy-btn {
+    font-size: 9px;
+    font-family: var(--font-mono);
+    color: var(--accent2);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: opacity 0.15s;
+  }
+  .caption-copy-btn:hover { opacity: 0.7; }
+
+  /* GALLERY - bottom of center */
+  .gallery-section {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
   .gallery-scroll {
     overflow-y: auto;
     flex: 1;
-    padding: 7px;
+    padding: 6px;
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
     gap: 4px;
     align-content: start;
   }
   .gallery-scroll::-webkit-scrollbar { width: 4px; }
   .gallery-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* RIGHT PANEL - library + ai review */
+  .right-panel {
+    width: 220px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .right-top {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid var(--border);
+  }
+  .right-bottom {
+    flex-shrink: 0;
+    overflow-y: auto;
+    max-height: 280px;
+    padding: 8px;
+  }
+  .right-bottom::-webkit-scrollbar { width: 3px; }
+  .right-bottom::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
 
   .thumb {
     aspect-ratio: 1;
@@ -233,20 +320,7 @@
   .src-comfyui { background: rgba(200,169,110,0.8); color: #000; }
   .src-unknown { background: rgba(80,80,100,0.8); color: #fff; }
 
-  /* EDITOR */
-  .editor-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-  .editor-top { display: flex; flex: 1; overflow: hidden; }
-
-  /* PREVIEW */
-  .preview-area {
-    width: 220px; flex-shrink: 0;
-    padding: 8px;
-    border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; gap: 5px;
-    overflow-y: auto;
-  }
-  .preview-area::-webkit-scrollbar { width: 4px; }
-  .preview-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  /* PREVIEW IMAGE */
   .preview-img {
     width: 100%; aspect-ratio: 1; object-fit: contain;
     background: var(--surface2); border-radius: 4px; border: 1px solid var(--border);
@@ -261,12 +335,12 @@
   .meta-row { display: flex; align-items: center; gap: 6px; }
   .meta-label {
     font-size: 10px; font-family: var(--font-mono); color: var(--text3);
-    text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; width: 52px;
+    text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; width: 48px;
   }
-  .meta-value { font-size: 11px; color: var(--text2); font-family: var(--font-mono); word-break: break-all; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .meta-value { font-size: 11px; color: var(--text2); font-family: var(--font-mono); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   select.meta-select {
     background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-    padding: 3px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px; flex: 1;
+    padding: 3px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px; flex: 1; width: 100%;
   }
   select.meta-select:focus { outline: none; border-color: var(--accent); }
   .tag-grid { display: flex; flex-wrap: wrap; gap: 3px; }
@@ -280,10 +354,18 @@
   .tag-chip.active { background: rgba(200,169,110,0.15); border-color: var(--accent); color: var(--accent); }
   .preview-btns { display: flex; flex-direction: column; gap: 3px; }
 
+  /* TEXTAREA */
+  textarea.field-input, input.field-input {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 4px 7px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px;
+    resize: vertical; transition: border-color 0.15s; width: 100%;
+  }
+  textarea.field-input:focus, input.field-input:focus { outline: none; border-color: var(--accent); }
+
   /* AI REVIEW */
   .ai-review-box {
     background: var(--surface2); border: 1px solid var(--border2);
-    border-radius: 6px; padding: 10px; font-size: 11px; font-family: var(--font-mono);
+    border-radius: 6px; padding: 8px; font-size: 11px; font-family: var(--font-mono);
   }
   .ai-score-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
   .ai-score-badge {
@@ -295,16 +377,13 @@
   .score-3 { background: rgba(200,169,110,0.1); color: var(--accent); border: 1px solid var(--accent); }
   .score-2 { background: rgba(212,95,95,0.1); color: #e08080; border: 1px solid #e08080; }
   .score-1 { background: rgba(212,95,95,0.2); color: var(--red); border: 1px solid var(--red); }
-  .ai-cats { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+  .ai-cats { display: flex; flex-direction: column; gap: 3px; margin-bottom: 5px; }
   .ai-cat-row { display: flex; align-items: center; gap: 6px; font-size: 10px; }
-  .ai-cat-label { color: var(--text3); width: 72px; flex-shrink: 0; }
-  .ai-cat-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .ai-cat-label { color: var(--text3); width: 64px; flex-shrink: 0; }
+  .ai-cat-bar { flex: 1; height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
   .ai-cat-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.4s; }
-  .ai-cat-val { color: var(--text2); width: 16px; text-align: right; }
-  .ai-notes {
-    color: var(--text2); font-size: 10px; line-height: 1.6;
-    border-top: 1px solid var(--border); padding-top: 6px; margin-top: 4px;
-  }
+  .ai-cat-val { color: var(--text2); width: 14px; text-align: right; }
+  .ai-notes { color: var(--text2); font-size: 10px; line-height: 1.5; border-top: 1px solid var(--border); padding-top: 5px; margin-top: 4px; }
   .ai-train-rec { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; }
   .ai-train-yes { background: rgba(95,173,139,0.15); color: var(--green); border: 1px solid var(--green); }
   .ai-train-no  { background: rgba(212,95,95,0.15); color: var(--red); border: 1px solid var(--red); }
@@ -312,75 +391,35 @@
   .ai-spinning { animation: spin 1s linear infinite; display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* CAPTION FIELDS */
-  .fields-area {
-    flex: 1; overflow-y: auto; padding: 10px;
-    display: flex; flex-direction: column; gap: 8px;
-  }
-  .fields-area::-webkit-scrollbar { width: 4px; }
-  .fields-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-  .fields-area > div { padding: 0 2px; }
-  textarea.field-input, input.field-input {
-    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-    padding: 4px 7px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px;
-    resize: vertical; transition: border-color 0.15s; width: 100%;
-  }
-  textarea.field-input:focus, input.field-input:focus { outline: none; border-color: var(--accent); }
-
-  /* EXPORT PANEL */
-  .export-panel {
-    border-top: 1px solid var(--border); padding: 8px 12px;
-    background: var(--surface); flex-shrink: 0;
-  }
-  .export-tabs { display: flex; gap: 4px; margin-bottom: 7px; }
-  .export-tab {
-    padding: 4px 12px; border: 1px solid var(--border); background: transparent;
-    color: var(--text3); border-radius: 3px; cursor: pointer;
-    font-family: var(--font-mono); font-size: 11px; transition: all 0.15s;
-  }
-  .export-tab:hover { color: var(--text2); border-color: var(--border2); }
-  .export-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(200,169,110,0.08); }
-  .export-output {
-    background: var(--surface2); border: 1px solid var(--border); border-radius: 4px;
-    padding: 7px 10px; font-family: var(--font-mono); font-size: 11px; color: var(--text2);
-    min-height: 44px; max-height: 76px; overflow-y: auto;
-    white-space: pre-wrap; word-break: break-word; line-height: 1.5;
-  }
-  .export-actions { display: flex; gap: 6px; margin-top: 6px; }
-
   /* DATABASE */
-  .db-panel {
-    width: 210px; flex-shrink: 0; border-left: 1px solid var(--border);
-    display: flex; flex-direction: column; overflow: hidden;
-  }
   .db-header {
-    padding: 7px 10px; background: var(--surface2); border-bottom: 1px solid var(--border);
+    padding: 6px 10px; background: var(--surface2); border-bottom: 1px solid var(--border);
     font-family: var(--font-mono); font-size: 11px; color: var(--text2);
     text-transform: uppercase; letter-spacing: 1px;
   }
-  .db-tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .db-tabs { display: flex; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
   .db-tab {
-    flex: 1; padding: 5px; text-align: center; cursor: pointer;
+    flex: 1; padding: 4px 3px; text-align: center; cursor: pointer;
     font-size: 10px; font-family: var(--font-mono); color: var(--text3);
-    border-bottom: 2px solid transparent; transition: all 0.15s;
+    border-bottom: 2px solid transparent; transition: all 0.15s; white-space: nowrap;
   }
   .db-tab:hover { color: var(--text2); }
   .db-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .db-content { flex: 1; overflow-y: auto; padding: 6px; }
-  .db-content::-webkit-scrollbar { width: 4px; }
+  .db-content { flex: 1; overflow-y: auto; padding: 5px; }
+  .db-content::-webkit-scrollbar { width: 3px; }
   .db-content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
   .db-item {
-    padding: 5px 7px; border-radius: 4px; cursor: pointer; margin-bottom: 3px;
+    padding: 4px 6px; border-radius: 3px; cursor: pointer; margin-bottom: 2px;
     border: 1px solid transparent; transition: all 0.15s;
     font-size: 11px; font-family: var(--font-mono); color: var(--text2);
   }
   .db-item:hover { background: var(--surface2); border-color: var(--border); color: var(--text); }
   .db-item .db-item-name { font-weight: 500; color: var(--text); font-size: 11px; }
-  .db-item .db-item-tags { color: var(--text3); font-size: 10px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .db-add-form { padding: 7px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+  .db-item .db-item-tags { color: var(--text3); font-size: 10px; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .db-add-form { padding: 6px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 3px; }
   input.db-input {
     background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-    padding: 4px 8px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px; width: 100%;
+    padding: 4px 7px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px; width: 100%;
   }
   input.db-input:focus { outline: none; border-color: var(--accent); }
 
@@ -494,114 +533,94 @@
 </div>
 
 <div class="main">
-  <!-- GALLERY -->
-  <div class="gallery-panel">
-    <div class="gallery-scroll" id="galleryGrid">
-      <div class="empty-state" style="grid-column:1/-1">
-        <div class="empty-icon">🖼</div>
-        <span>Open a project folder to begin</span>
+
+  <!-- LEFT: image + meta + actions -->
+  <div class="left-panel">
+    <div id="previewPlaceholder" class="preview-placeholder">Select an image</div>
+    <img id="previewImg" class="preview-img" style="display:none" alt="">
+
+    <div class="meta-row"><div class="meta-label">File</div><div class="meta-value" id="metaFilename">—</div></div>
+    <div class="meta-row">
+      <div class="meta-label">Source</div>
+      <select class="meta-select" id="metaSource" onchange="onMetaChange()">
+        <option value="unknown">Unknown</option>
+        <option value="chatgpt">ChatGPT / DALL-E</option>
+        <option value="zonner">Zonner</option>
+        <option value="copilot">Copilot / Bing</option>
+        <option value="comfyui">ComfyUI / Flux</option>
+      </select>
+    </div>
+    <div class="meta-row" style="flex-direction:column;align-items:flex-start;gap:3px">
+      <div class="meta-label">Rating</div>
+      <div class="tag-grid" id="ratingChips">
+        <span class="tag-chip" data-val="1" onclick="setRating(1)">★</span>
+        <span class="tag-chip" data-val="2" onclick="setRating(2)">★★</span>
+        <span class="tag-chip" data-val="3" onclick="setRating(3)">★★★</span>
+        <span class="tag-chip" data-val="4" onclick="setRating(4)">★★★★</span>
+        <span class="tag-chip" data-val="5" onclick="setRating(5)">★★★★★</span>
+      </div>
+    </div>
+    <div class="meta-row">
+      <div class="meta-label">Train</div>
+      <div class="tag-grid">
+        <span class="tag-chip" id="trainYes" onclick="setTraining(true)">✓ Yes</span>
+        <span class="tag-chip" id="trainNo" onclick="setTraining(false)">✗ No</span>
+      </div>
+    </div>
+
+    <div class="preview-btns" style="margin-top:4px">
+      <button class="btn" onclick="copyCaption()">📋 Copy prompt</button>
+      <button class="btn" onclick="saveTxt()">💾 Save .txt</button>
+      <button class="btn purple" id="aiBtnMain" onclick="runAiReview()">🤖 AI Review</button>
+      <button class="btn green" id="doneBtn" onclick="markDone()">✓ Mark Processed</button>
+      <button class="btn danger" onclick="clearCaption()">✕ Clear</button>
+    </div>
+  </div>
+
+  <!-- CENTER: prompt + kohya/chatgpt + gallery -->
+  <div class="center-panel">
+    <div class="center-top" id="fieldsArea">
+      <div class="empty-state" style="padding:20px">
+        <div class="empty-icon">✏️</div>
+        <span>Select an image</span>
+      </div>
+    </div>
+    <div class="gallery-section">
+      <div class="gallery-scroll" id="galleryGrid">
+        <div class="empty-state" style="grid-column:1/-1">
+          <div class="empty-icon">🖼</div>
+          <span>Open a project folder to begin</span>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- EDITOR -->
-  <div class="editor-panel">
-    <div class="editor-top">
-
-      <!-- PREVIEW + META -->
-      <div class="preview-area">
-        <div id="previewPlaceholder" class="preview-placeholder">Select an image</div>
-        <img id="previewImg" class="preview-img" style="display:none" alt="">
-
-        <div class="meta-row">
-          <div class="meta-label">File</div>
-          <div class="meta-value" id="metaFilename">—</div>
-        </div>
-        <div class="meta-row">
-          <div class="meta-label">Source</div>
-          <select class="meta-select" id="metaSource" onchange="onMetaChange()">
-            <option value="unknown">Unknown</option>
-            <option value="chatgpt">ChatGPT / DALL-E</option>
-            <option value="zonner">Zonner</option>
-            <option value="copilot">Copilot / Bing</option>
-            <option value="comfyui">ComfyUI / Flux</option>
-          </select>
-        </div>
-        <div class="meta-row" style="align-items:flex-start;flex-direction:column;gap:3px">
-          <div class="meta-label">Rating</div>
-          <div class="tag-grid" id="ratingChips">
-            <span class="tag-chip" data-val="1" onclick="setRating(1)">★</span>
-            <span class="tag-chip" data-val="2" onclick="setRating(2)">★★</span>
-            <span class="tag-chip" data-val="3" onclick="setRating(3)">★★★</span>
-            <span class="tag-chip" data-val="4" onclick="setRating(4)">★★★★</span>
-            <span class="tag-chip" data-val="5" onclick="setRating(5)">★★★★★</span>
-          </div>
-        </div>
-        <div class="meta-row">
-          <div class="meta-label">Train</div>
-          <div class="tag-grid">
-            <span class="tag-chip" id="trainYes" onclick="setTraining(true)">✓ Yes</span>
-            <span class="tag-chip" id="trainNo" onclick="setTraining(false)">✗ No</span>
-          </div>
-        </div>
-
-        <div class="preview-btns" style="margin-top:2px">
-          <button class="btn" onclick="copyCaption()">📋 Copy</button>
-          <button class="btn" onclick="saveTxt()">💾 Save .txt</button>
-          <button class="btn purple" id="aiBtnMain" onclick="runAiReview()">🤖 AI Review</button>
-          <button class="btn green" id="doneBtn" onclick="markDone()">✓ Mark Processed</button>
-          <button class="btn danger" onclick="clearCaption()">✕ Clear</button>
-        </div>
-        <div id="aiReviewResult"></div>
+  <!-- RIGHT: library + ai review -->
+  <div class="right-panel">
+    <div class="right-top">
+      <div class="db-header" style="display:flex;align-items:center;justify-content:space-between">
+        <span>📚 Library</span>
+        <button class="btn" style="padding:2px 8px;font-size:10px;border-color:var(--accent2);color:var(--accent2)" onclick="importLibraryJson()">⬆ Import</button>
       </div>
-
-      <!-- PROMPT + EXPORT -->
-      <div class="fields-area" id="fieldsArea">
-        <div class="empty-state">
-          <div class="empty-icon">✏️</div>
-          <span>Select an image to edit its caption</span>
-        </div>
+      <div class="db-tabs">
+        <div class="db-tab active" data-dbtab="poses" onclick="switchDbTab('poses',this)">Poses</div>
+        <div class="db-tab" data-dbtab="outfits" onclick="switchDbTab('outfits',this)">Outfits</div>
+        <div class="db-tab" data-dbtab="scenes" onclick="switchDbTab('scenes',this)">Scenes</div>
+        <div class="db-tab" data-dbtab="identity" onclick="switchDbTab('identity',this)">Identity</div>
+        <div class="db-tab" data-dbtab="lighting" onclick="switchDbTab('lighting',this)">Light</div>
+        <div class="db-tab" data-dbtab="photo" onclick="switchDbTab('photo',this)">Photo</div>
+        <div class="db-tab" data-dbtab="quality" onclick="switchDbTab('quality',this)">Quality</div>
       </div>
-
-      <!-- DATABASE -->
-      <div class="db-panel">
-        <div class="db-header" style="display:flex;align-items:center;justify-content:space-between">
-          <span>📚 Library</span>
-          <button class="btn" style="padding:2px 8px;font-size:10px;border-color:var(--accent2);color:var(--accent2)" onclick="importLibraryJson()" title="Import Library JSON">⬆ Import</button>
-        </div>
-        <div class="db-tabs" style="flex-wrap:wrap">
-          <div class="db-tab active" data-dbtab="poses" onclick="switchDbTab('poses',this)">Poses</div>
-          <div class="db-tab" data-dbtab="outfits" onclick="switchDbTab('outfits',this)">Outfits</div>
-          <div class="db-tab" data-dbtab="scenes" onclick="switchDbTab('scenes',this)">Scenes</div>
-          <div class="db-tab" data-dbtab="identity" onclick="switchDbTab('identity',this)">Identity</div>
-          <div class="db-tab" data-dbtab="lighting" onclick="switchDbTab('lighting',this)">Light</div>
-          <div class="db-tab" data-dbtab="photo" onclick="switchDbTab('photo',this)">Photo</div>
-          <div class="db-tab" data-dbtab="quality" onclick="switchDbTab('quality',this)">Quality</div>
-        </div>
-        <div class="db-content" id="dbContent"></div>
-        <div class="db-add-form">
-          <input class="db-input" id="dbNewName" placeholder="Name">
-          <input class="db-input" id="dbNewTags" placeholder="Tags (comma separated)">
-          <button class="btn" style="width:100%" onclick="addDbItem()">＋ Add</button>
-        </div>
+      <div class="db-content" id="dbContent"></div>
+      <div class="db-add-form">
+        <input class="db-input" id="dbNewName" placeholder="Name">
+        <input class="db-input" id="dbNewTags" placeholder="Tags (comma separated)">
+        <button class="btn" style="width:100%" onclick="addDbItem()">＋ Add</button>
       </div>
     </div>
-
-    <!-- EXPORT -->
-    <div class="export-panel">
-      <div class="export-tabs">
-        <button class="export-tab active" data-fmt="comfy" onclick="setExportFmt('comfy',this)">ComfyUI/Flux</button>
-        <button class="export-tab" data-fmt="chatgpt" onclick="setExportFmt('chatgpt',this)">ChatGPT</button>
-        <button class="export-tab" data-fmt="copilot" onclick="setExportFmt('copilot',this)">Copilot</button>
-        <button class="export-tab" data-fmt="zonner" onclick="setExportFmt('zonner',this)">Zonner</button>
-      </div>
-      <div class="export-output" id="exportOutput">— select an image —</div>
-      <div class="export-actions">
-        <button class="btn" onclick="copyExport()">📋 Copy</button>
-        <button class="btn accent" onclick="saveTxt()">💾 Save .txt</button>
-      </div>
-    </div>
+    <div class="right-bottom" id="aiReviewResult"></div>
   </div>
+
 </div>
 
 <!-- SETTINGS MODAL -->
@@ -724,7 +743,6 @@ let project = {
 let currentId = null;
 let currentFilter = 'all';
 let currentDbTab = 'poses';
-let currentExportFmt = 'comfy';
 let dirHandle = null;
 
 // ===================== INIT =====================
@@ -997,28 +1015,27 @@ function renderFields(img) {
   const uid = img.id.replace(/[^a-z0-9]/gi,'');
 
   area.innerHTML = `
-    <div style="display:flex;flex-direction:column;gap:6px;height:100%;padding:8px">
-      <div style="display:flex;flex-direction:column;gap:3px;flex:1;min-height:0">
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <div style="display:flex;flex-direction:column;gap:3px">
         <div style="font-size:9px;font-family:var(--font-mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px">📝 Prompt</div>
-        <textarea class="field-input" id="field_prompt" style="flex:1;min-height:80px;resize:none"
-          oninput="onPromptChange()">${escH(prompt.trim())}</textarea>
+        <textarea class="field-input" id="field_prompt" rows="10" style="resize:none"
+          oninput="onPromptChange()">${escH(prompt)}</textarea>
       </div>
-
-      <div style="display:flex;gap:6px;flex-shrink:0">
-        <div style="flex:1;display:flex;flex-direction:column;gap:3px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:9px;font-family:var(--font-mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px">⚙ Kohya / Flux</span>
-            <button onclick="copyText('${uid}_kohya')" style="font-size:9px;font-family:var(--font-mono);color:var(--accent2);background:none;border:none;cursor:pointer;padding:0">📋 copy</button>
+      <div style="display:flex;gap:6px">
+        <div class="caption-block">
+          <div class="caption-block-header">
+            <span class="caption-block-label">⚙ Kohya / Flux</span>
+            <button class="caption-copy-btn" onclick="copyText('${uid}_kohya')">📋 copy</button>
           </div>
-          <textarea id="${uid}_kohya" class="field-input" rows="5" style="resize:none;font-size:10px;color:var(--text3)"
+          <textarea id="${uid}_kohya" class="field-input" rows="5" style="resize:none;font-size:10px"
             oninput="onAiCaptionEdit('kohya','${uid}_kohya')">${escH(kohya)}</textarea>
         </div>
-        <div style="flex:1;display:flex;flex-direction:column;gap:3px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <span style="font-size:9px;font-family:var(--font-mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px">💬 ChatGPT</span>
-            <button onclick="copyText('${uid}_chatgpt')" style="font-size:9px;font-family:var(--font-mono);color:var(--accent2);background:none;border:none;cursor:pointer;padding:0">📋 copy</button>
+        <div class="caption-block">
+          <div class="caption-block-header">
+            <span class="caption-block-label">💬 ChatGPT</span>
+            <button class="caption-copy-btn" onclick="copyText('${uid}_chatgpt')">📋 copy</button>
           </div>
-          <textarea id="${uid}_chatgpt" class="field-input" rows="5" style="resize:none;font-size:10px;color:var(--text3)"
+          <textarea id="${uid}_chatgpt" class="field-input" rows="5" style="resize:none;font-size:10px"
             oninput="onAiCaptionEdit('chatgpt','${uid}_chatgpt')">${escH(chatgpt)}</textarea>
         </div>
       </div>
@@ -1091,23 +1108,6 @@ function buildCaption(img, fmt) {
   if (fmt === 'copilot') return prompt;
   if (fmt === 'zonner') return `Generate a photorealistic image: ${prompt}.`;
   return prompt;
-}
-
-function setExportFmt(fmt, el) {
-  currentExportFmt = fmt;
-  document.querySelectorAll('.export-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  updateExport();
-}
-function updateExport() {
-  const out = document.getElementById('exportOutput');
-  if (!currentId) { out.textContent = '— select an image —'; return; }
-  const img = project.images.find(i => i.id === currentId);
-  if (img) out.textContent = buildCaption(img, currentExportFmt);
-}
-function copyExport() {
-  navigator.clipboard.writeText(document.getElementById('exportOutput')?.textContent || '')
-    .then(() => notify('Copied!', 'success'));
 }
 
 // ===================== SAVE =====================
