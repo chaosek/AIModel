@@ -580,35 +580,20 @@
       <input class="field-input" id="cfgName" placeholder="e.g. maya01noir">
     </div>
     <div class="field-row">
-      <div class="meta-label" style="margin-bottom:4px">Default Caption Blocks</div>
-    </div>
-    <div class="field-row">
-      <div class="field-label">Identity (trigger word, face description)</div>
-      <textarea class="field-input" id="cfgIdentity" rows="2" style="min-height:40px"></textarea>
-    </div>
-    <div class="field-row">
-      <div class="field-label">Body (proportions, figure)</div>
-      <textarea class="field-input" id="cfgBody" rows="2" style="min-height:40px"></textarea>
-    </div>
-    <div class="field-row">
-      <div class="field-label">Quality (realism, resolution tags)</div>
-      <textarea class="field-input" id="cfgQuality" rows="2" style="min-height:40px"></textarea>
-    </div>
-    <div class="field-row">
-      <div class="field-label">AI Review character description (for AI review prompt)</div>
+      <div class="field-label">AI Review character description</div>
       <textarea class="field-input" id="cfgAiDesc" rows="3" style="min-height:56px" placeholder="Describe your character for AI review context..."></textarea>
     </div>
     <div style="display:flex;gap:8px;align-items:flex-start;margin-top:4px">
       <div style="flex:1;display:flex;flex-direction:column;gap:4px">
         <div class="field-label">Face reference</div>
-        <div id="refFacePreview" style="width:100%;aspect-ratio:2/3;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);cursor:pointer;overflow:hidden;background-size:cover;background-position:center" onclick="document.getElementById('cfgRefFace').click()">
+        <div id="refFacePreview" style="width:100%;aspect-ratio:2/3;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text3);cursor:pointer;overflow:hidden;background-size:cover;background-position:center" onclick="document.getElementById('cfgRefFace').click()">
           <span id="refFaceLabel">Click to upload</span>
         </div>
         <input type="file" id="cfgRefFace" accept="image/*" style="display:none" onchange="previewRef('face',this)">
       </div>
       <div style="flex:1;display:flex;flex-direction:column;gap:4px">
         <div class="field-label">Body reference</div>
-        <div id="refBodyPreview" style="width:100%;aspect-ratio:2/3;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);cursor:pointer;overflow:hidden;background-size:cover;background-position:center" onclick="document.getElementById('cfgRefBody').click()">
+        <div id="refBodyPreview" style="width:100%;aspect-ratio:2/3;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--text3);cursor:pointer;overflow:hidden;background-size:cover;background-position:center" onclick="document.getElementById('cfgRefBody').click()">
           <span id="refBodyLabel">Click to upload</span>
         </div>
         <input type="file" id="cfgRefBody" accept="image/*" style="display:none" onchange="previewRef('body',this)">
@@ -711,9 +696,6 @@ function updateProjectDisplay() {
 // ===================== SETTINGS =====================
 function showSettingsModal() {
   document.getElementById('cfgName').value = config.name;
-  document.getElementById('cfgIdentity').value = config.identity;
-  document.getElementById('cfgBody').value = config.body;
-  document.getElementById('cfgQuality').value = config.quality;
   document.getElementById('cfgAiDesc').value = config.aiDesc;
   // Restore reference previews
   ['face','body'].forEach(type => {
@@ -735,9 +717,6 @@ function closeSettingsModal() {
 }
 function saveSettings() {
   config.name = document.getElementById('cfgName').value.trim() || 'My AI Model';
-  config.identity = document.getElementById('cfgIdentity').value.trim();
-  config.body = document.getElementById('cfgBody').value.trim();
-  config.quality = document.getElementById('cfgQuality').value.trim();
   config.aiDesc = document.getElementById('cfgAiDesc').value.trim();
   // refFace and refBody are saved directly by previewRef()
   try { localStorage.setItem('aiCaptionConfig', JSON.stringify(config)); } catch(e) {}
