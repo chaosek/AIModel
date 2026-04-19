@@ -239,45 +239,46 @@
 
   /* PREVIEW */
   .preview-area {
-    width: 288px; flex-shrink: 0;
-    padding: 10px;
+    width: 220px; flex-shrink: 0;
+    padding: 8px;
     border-right: 1px solid var(--border);
-    display: flex; flex-direction: column; gap: 8px;
+    display: flex; flex-direction: column; gap: 5px;
     overflow-y: auto;
   }
   .preview-area::-webkit-scrollbar { width: 4px; }
   .preview-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
   .preview-img {
     width: 100%; aspect-ratio: 1; object-fit: contain;
-    background: var(--surface2); border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface2); border-radius: 4px; border: 1px solid var(--border);
   }
   .preview-placeholder {
     width: 100%; aspect-ratio: 1;
-    background: var(--surface2); border-radius: 6px;
+    background: var(--surface2); border-radius: 4px;
     border: 1px dashed var(--border2);
     display: flex; align-items: center; justify-content: center;
-    color: var(--text3); font-size: 12px;
+    color: var(--text3); font-size: 11px;
   }
-  .meta-row { display: flex; flex-direction: column; gap: 3px; }
+  .meta-row { display: flex; align-items: center; gap: 6px; }
   .meta-label {
     font-size: 10px; font-family: var(--font-mono); color: var(--text3);
-    text-transform: uppercase; letter-spacing: 1px;
+    text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; width: 52px;
   }
-  .meta-value { font-size: 12px; color: var(--text2); font-family: var(--font-mono); word-break: break-all; }
+  .meta-value { font-size: 11px; color: var(--text2); font-family: var(--font-mono); word-break: break-all; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   select.meta-select {
     background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-    padding: 4px 8px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px; width: 100%;
+    padding: 3px 6px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px; flex: 1;
   }
   select.meta-select:focus { outline: none; border-color: var(--accent); }
-  .tag-grid { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+  .tag-grid { display: flex; flex-wrap: wrap; gap: 3px; }
   .tag-chip {
-    padding: 2px 8px;
+    padding: 1px 6px;
     background: var(--surface3); border: 1px solid var(--border2);
-    border-radius: 3px; font-size: 11px; font-family: var(--font-mono); color: var(--text2);
+    border-radius: 3px; font-size: 10px; font-family: var(--font-mono); color: var(--text2);
     cursor: pointer; transition: all 0.15s; user-select: none;
   }
   .tag-chip:hover { border-color: var(--accent); color: var(--accent); }
   .tag-chip.active { background: rgba(200,169,110,0.15); border-color: var(--accent); color: var(--accent); }
+  .preview-btns { display: flex; flex-direction: column; gap: 3px; }
 
   /* AI REVIEW */
   .ai-review-box {
@@ -318,27 +319,27 @@
   }
   .fields-area::-webkit-scrollbar { width: 4px; }
   .fields-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-  .field-group { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .field-group { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
   .field-group-header {
-    display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+    display: flex; align-items: center; gap: 6px; padding: 4px 8px;
     background: var(--surface2); border-bottom: 1px solid var(--border);
     cursor: pointer; user-select: none;
   }
   .field-group-header:hover { background: var(--surface3); }
-  .group-icon { font-size: 14px; }
-  .group-name { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
-  .group-toggle { margin-left: auto; color: var(--text3); font-size: 10px; transition: transform 0.2s; }
+  .group-icon { font-size: 12px; }
+  .group-name { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
+  .group-toggle { margin-left: auto; color: var(--text3); font-size: 9px; transition: transform 0.2s; }
   .field-group.collapsed .group-toggle { transform: rotate(-90deg); }
-  .field-group-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .field-group-body { padding: 5px 7px; display: flex; flex-direction: column; gap: 4px; }
   .field-group.collapsed .field-group-body { display: none; }
-  .field-row { display: flex; flex-direction: column; gap: 3px; }
-  .field-label { font-size: 10px; font-family: var(--font-mono); color: var(--text3); }
+  .field-row { display: flex; flex-direction: column; gap: 2px; }
+  .field-label { font-size: 9px; font-family: var(--font-mono); color: var(--text3); }
   textarea.field-input, input.field-input {
     background: var(--surface2); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 8px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px;
-    resize: none; transition: border-color 0.15s; width: 100%;
+    padding: 4px 7px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px;
+    resize: vertical; transition: border-color 0.15s; width: 100%;
   }
-  textarea.field-input { min-height: 50px; }
+  textarea.field-input { min-height: 36px; max-height: 120px; }
   textarea.field-input:focus, input.field-input:focus { outline: none; border-color: var(--accent); }
 
   /* EXPORT PANEL */
@@ -503,7 +504,7 @@
         <img id="previewImg" class="preview-img" style="display:none" alt="">
 
         <div class="meta-row">
-          <div class="meta-label">Filename</div>
+          <div class="meta-label">File</div>
           <div class="meta-value" id="metaFilename">—</div>
         </div>
         <div class="meta-row">
@@ -516,7 +517,7 @@
             <option value="comfyui">ComfyUI / Flux</option>
           </select>
         </div>
-        <div class="meta-row">
+        <div class="meta-row" style="align-items:flex-start;flex-direction:column;gap:3px">
           <div class="meta-label">Rating</div>
           <div class="tag-grid" id="ratingChips">
             <span class="tag-chip" data-val="1" onclick="setRating(1)">★</span>
@@ -527,18 +528,20 @@
           </div>
         </div>
         <div class="meta-row">
-          <div class="meta-label">Use for Training</div>
+          <div class="meta-label">Train</div>
           <div class="tag-grid">
             <span class="tag-chip" id="trainYes" onclick="setTraining(true)">✓ Yes</span>
             <span class="tag-chip" id="trainNo" onclick="setTraining(false)">✗ No</span>
           </div>
         </div>
 
-        <button class="btn" style="margin-top:2px" onclick="copyCaption()">📋 Copy Caption</button>
-        <button class="btn" onclick="saveTxt()">💾 Save .txt</button>
-        <button class="btn purple" id="aiBtnMain" onclick="runAiReview()">🤖 AI Review</button>
-        <button class="btn green" id="doneBtn" onclick="markDone()">✓ Mark as Processed</button>
-        <button class="btn danger" onclick="clearCaption()">✕ Clear Caption</button>
+        <div class="preview-btns" style="margin-top:2px">
+          <button class="btn" onclick="copyCaption()">📋 Copy</button>
+          <button class="btn" onclick="saveTxt()">💾 Save .txt</button>
+          <button class="btn purple" id="aiBtnMain" onclick="runAiReview()">🤖 AI Review</button>
+          <button class="btn green" id="doneBtn" onclick="markDone()">✓ Mark Processed</button>
+          <button class="btn danger" onclick="clearCaption()">✕ Clear</button>
+        </div>
         <div id="aiReviewResult"></div>
       </div>
 
@@ -953,11 +956,8 @@ function renderFields(img) {
         <span class="group-toggle">▾</span>
       </div>
       <div class="field-group-body">
-        <div class="field-row">
-          <div class="field-label">${def.hint}</div>
-          <textarea class="field-input" id="field_${def.key}" placeholder="${def.placeholder}"
-            oninput="onFieldChange('${def.key}')">${escH(img.caption[def.key]||'')}</textarea>
-        </div>
+        <textarea class="field-input" id="field_${def.key}" placeholder="${def.placeholder}"
+          oninput="onFieldChange('${def.key}')">${escH(img.caption[def.key]||'')}</textarea>
         ${(QUICK_TAGS[def.key]||[]).length ? `<div class="tag-grid">${(QUICK_TAGS[def.key]).map(t =>
           `<span class="tag-chip" onclick="appendTag('${def.key}','${escJ(t)}')">${t}</span>`
         ).join('')}</div>` : ''}
