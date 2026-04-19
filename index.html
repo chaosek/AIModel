@@ -1091,10 +1091,9 @@ function updateExport() {
   if (img) out.textContent = buildCaption(img, currentExportFmt);
 }
 function copyExport() {
-  navigator.clipboard.writeText(document.getElementById('exportOutput').textContent)
+  navigator.clipboard.writeText(document.getElementById('exportOutput')?.textContent || '')
     .then(() => notify('Copied!', 'success'));
 }
-function copyCaption() { copyExport(); }
 
 // ===================== SAVE =====================
 async function saveTxt() {
@@ -1439,7 +1438,6 @@ function renderAiResult(r, el) {
     const img = project.images.find(i => i.id === currentId);
     if (img) renderFields(img);
   }
-}
 }
 
 function copyAiCaption(id) {
