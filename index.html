@@ -339,7 +339,7 @@
     padding: 4px 7px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px;
     resize: vertical; transition: border-color 0.15s; width: 100%;
   }
-  textarea.field-input { min-height: 36px; max-height: 120px; }
+  textarea.field-input { resize: vertical; }
   textarea.field-input:focus, input.field-input:focus { outline: none; border-color: var(--accent); }
 
   /* EXPORT PANEL */
@@ -787,7 +787,8 @@ async function scanImages() {
     } catch(e) {}
 
     const saved = project._savedImages?.[entry.name] || {};
-    const caption = saved.caption || parseCaption(rawCaption);
+    const savedCaptionEmpty = !saved.caption || !Object.values(saved.caption).some(v => v && v.trim());
+    const caption = savedCaptionEmpty ? parseCaption(rawCaption) : saved.caption;
 
     project.images.push({
       id: entry.name, name: entry.name, baseName, src,
@@ -929,12 +930,12 @@ function selectImage(id) {
 
 // ===================== FIELDS =====================
 const FIELD_DEFS = [
-  { key:'identity', icon:'👤', name:'Identity', placeholder:'trigger word, face description, hair, eyes, makeup...', hint:'Trigger word + appearance' },
-  { key:'body',     icon:'🧍', name:'Body & Proportions', placeholder:'figure, proportions, height...', hint:'Body description' },
-  { key:'outfit',   icon:'👗', name:'Outfit', placeholder:'clothing, material, colors...', hint:'What she/he is wearing' },
-  { key:'scene',    icon:'🌆', name:'Scene & Environment', placeholder:'background, setting, location...', hint:'Where the photo is set' },
-  { key:'photo',    icon:'📷', name:'Photo Parameters', placeholder:'shot type, angle, lighting, composition...', hint:'Technical photo aspects' },
-  { key:'quality',  icon:'✨', name:'Realism & Quality', placeholder:'photorealistic, 8k, sharp focus...', hint:'Quality tags' },
+  { key:'identity', icon:'👤', name:'Identity', placeholder:'trigger word, face description, hair, eyes, makeup...', rows:4 },
+  { key:'body',     icon:'🧍', name:'Body',     placeholder:'figure, proportions, height...', rows:3 },
+  { key:'outfit',   icon:'👗', name:'Outfit',   placeholder:'clothing, material, colors...', rows:3 },
+  { key:'scene',    icon:'🌆', name:'Scene',    placeholder:'background, setting, location...', rows:3 },
+  { key:'photo',    icon:'📷', name:'Photo',    placeholder:'shot type, angle, lighting...', rows:3 },
+  { key:'quality',  icon:'✨', name:'Quality',  placeholder:'photorealistic, 8k, sharp focus...', rows:3 },
 ];
 
 const QUICK_TAGS = {
@@ -956,8 +957,8 @@ function renderFields(img) {
         <span class="group-toggle">▾</span>
       </div>
       <div class="field-group-body">
-        <textarea class="field-input" id="field_${def.key}" placeholder="${def.placeholder}"
-          oninput="onFieldChange('${def.key}')">${escH(img.caption[def.key]||'')}</textarea>
+        <textarea class="field-input" id="field_${def.key}" rows="${def.rows}" placeholder="${def.placeholder}"
+          oninput="onFieldChange('${def.key}')">${escH((img.caption[def.key]||'').trim())}</textarea>
         ${(QUICK_TAGS[def.key]||[]).length ? `<div class="tag-grid">${(QUICK_TAGS[def.key]).map(t =>
           `<span class="tag-chip" onclick="appendTag('${def.key}','${escJ(t)}')">${t}</span>`
         ).join('')}</div>` : ''}
@@ -974,7 +975,7 @@ function onFieldChange(key) {
   if (!currentId) return;
   const img = project.images.find(i => i.id === currentId);
   if (!img) return;
-  img.caption[key] = document.getElementById('field_' + key).value;
+  img.caption[key] = document.getElementById('field_' + key).value.trim();
   updateExport();
   updateStats();
 }
