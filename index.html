@@ -586,6 +586,21 @@
         </div>
       </div>
     </div>
+
+    <!-- EXPORT -->
+    <div class="export-panel">
+      <div class="export-tabs">
+        <button class="export-tab active" data-fmt="comfy" onclick="setExportFmt('comfy',this)">ComfyUI/Flux</button>
+        <button class="export-tab" data-fmt="chatgpt" onclick="setExportFmt('chatgpt',this)">ChatGPT</button>
+        <button class="export-tab" data-fmt="copilot" onclick="setExportFmt('copilot',this)">Copilot</button>
+        <button class="export-tab" data-fmt="zonner" onclick="setExportFmt('zonner',this)">Zonner</button>
+      </div>
+      <div class="export-output" id="exportOutput">— select an image —</div>
+      <div class="export-actions">
+        <button class="btn" onclick="copyExport()">📋 Copy</button>
+        <button class="btn accent" onclick="saveTxt()">💾 Save .txt</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -972,9 +987,9 @@ function selectImage(id) {
 // ===================== FIELDS =====================
 function renderFields(img) {
   const area = document.getElementById('fieldsArea');
-  const prompt = (img.caption && img.caption.prompt) ? img.caption.prompt :
-    // backwards compat: join old fields
-    Object.values(img.caption||{}).filter(v=>v&&v.trim()).join(', ');
+  const prompt = ((img.caption && img.caption.prompt) ? img.caption.prompt :
+    Object.values(img.caption||{}).filter(v=>v&&v.trim()).join(', ')
+  ).replace(/\r\n/g,' ').replace(/[\r\n]+/g,' ').replace(/\s+/g,' ').trim();
 
   const r = img.aiReview || {};
   const kohya = r.caption_kohya || '';
