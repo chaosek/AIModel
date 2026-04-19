@@ -825,28 +825,34 @@ function guessSource(name) {
 
 // ===================== CAPTION PARSING =====================
 function parseCaption(raw) {
-  if (!raw || !raw.trim()) return {identity:'', body:'', outfit:'', scene:'', photo:'', quality:''};
+  if (!raw || !raw.trim()) return {identity:'', body:'', pose:'', outfit:'', scene:'', lighting:'', photo:'', quality:''};
   const tags = raw.split(',').map(t => t.trim()).filter(Boolean);
-  const bodyKw = ['figure','bust','waist','legs','athletic','slender','body','petite','curvy','height'];
-  const outfitKw = ['latex','dress','outfit','wearing','bodysuit','jeans','skirt','top','bikini','swimwear','jacket','corset','boots','heels','shirt','pants'];
-  const sceneKw = ['background','studio','city','beach','forest','interior','outdoor','indoor','setting','room','street','landscape'];
-  const photoKw = ['shot','view','portrait','full body','half body','angle','lighting','bokeh','depth of field','close-up','wide','medium','composition'];
-  const qualityKw = ['photorealistic','realistic','8k','4k','hd','sharp','detailed','professional','photography','cinematic'];
-  const buckets = {identity:[], body:[], outfit:[], scene:[], photo:[], quality:[]};
+  const bodyKw = ['figure','bust','waist','legs','athletic','slender','body','petite','curvy','height','proportions'];
+  const poseKw = ['standing','sitting','walking','lying','kneeling','crouching','leaning','pose','posture','stride','mid-step','seated','reclined','turned','facing','arm raised','hand on','legs crossed'];
+  const outfitKw = ['latex','dress','outfit','wearing','bodysuit','jeans','skirt','top','bikini','swimwear','jacket','corset','boots','heels','shirt','pants','catsuit','leggings','gown','shorts','stockings','tights','sandals'];
+  const sceneKw = ['background','studio','city','beach','forest','interior','outdoor','indoor','setting','room','street','landscape','rooftop','parking','bedroom','cafe','pool','hotel'];
+  const lightingKw = ['lighting','daylight','light setup','rim light','key light','ambient light','golden hour','backlight','side light','shadow','highlight','cinematic light','soft light','dramatic light','warm light','cool light'];
+  const photoKw = ['shot','view','portrait','full body','half body','angle','bokeh','depth of field','close-up','wide','medium','composition','lens','85mm','frame','crop'];
+  const qualityKw = ['photorealistic','realistic','8k','4k','hd','sharp focus','ultra detailed','high detail','professional','magazine','editorial','no watermark','no text','no distortion'];
+  const buckets = {identity:[], body:[], pose:[], outfit:[], scene:[], lighting:[], photo:[], quality:[]};
   tags.forEach(t => {
     const tl = t.toLowerCase();
     if (qualityKw.some(k=>tl.includes(k))) buckets.quality.push(t);
+    else if (lightingKw.some(k=>tl.includes(k))) buckets.lighting.push(t);
     else if (photoKw.some(k=>tl.includes(k))) buckets.photo.push(t);
     else if (sceneKw.some(k=>tl.includes(k))) buckets.scene.push(t);
     else if (outfitKw.some(k=>tl.includes(k))) buckets.outfit.push(t);
+    else if (poseKw.some(k=>tl.includes(k))) buckets.pose.push(t);
     else if (bodyKw.some(k=>tl.includes(k))) buckets.body.push(t);
     else buckets.identity.push(t);
   });
   return {
     identity: buckets.identity.join(', '),
     body: buckets.body.join(', '),
+    pose: buckets.pose.join(', '),
     outfit: buckets.outfit.join(', '),
     scene: buckets.scene.join(', '),
+    lighting: buckets.lighting.join(', '),
     photo: buckets.photo.join(', '),
     quality: buckets.quality.join(', '),
   };
@@ -937,21 +943,25 @@ function selectImage(id) {
 
 // ===================== FIELDS =====================
 const FIELD_DEFS = [
-  { key:'identity', icon:'👤', name:'Identity', placeholder:'trigger word, face description, hair, eyes, makeup...', rows:4 },
-  { key:'body',     icon:'🧍', name:'Body',     placeholder:'figure, proportions, height...', rows:3 },
-  { key:'outfit',   icon:'👗', name:'Outfit',   placeholder:'clothing, material, colors...', rows:3 },
-  { key:'scene',    icon:'🌆', name:'Scene',    placeholder:'background, setting, location...', rows:3 },
-  { key:'photo',    icon:'📷', name:'Photo',    placeholder:'shot type, angle, lighting...', rows:3 },
-  { key:'quality',  icon:'✨', name:'Quality',  placeholder:'photorealistic, 8k, sharp focus...', rows:3 },
+  { key:'identity', icon:'👤', name:'Identity',  placeholder:'trigger word, face description, hair, eyes, makeup...', rows:4 },
+  { key:'body',     icon:'🧍', name:'Body',      placeholder:'figure, proportions, height...', rows:3 },
+  { key:'pose',     icon:'🤸', name:'Pose',      placeholder:'standing, walking, sitting, crouching...', rows:3 },
+  { key:'outfit',   icon:'👗', name:'Outfit',    placeholder:'clothing, material, colors...', rows:3 },
+  { key:'scene',    icon:'🌆', name:'Scene',     placeholder:'background, setting, location...', rows:3 },
+  { key:'lighting', icon:'💡', name:'Lighting',  placeholder:'natural daylight, cinematic, dramatic...', rows:3 },
+  { key:'photo',    icon:'📷', name:'Photo',     placeholder:'full body shot, 85mm lens, depth of field...', rows:3 },
+  { key:'quality',  icon:'✨', name:'Quality',   placeholder:'photorealistic, 8k, sharp focus...', rows:3 },
 ];
 
 const QUICK_TAGS = {
   identity: [],
   body: ['slender athletic figure','full bust','narrow waist','long legs','hourglass figure','toned abs','petite frame'],
-  outfit: ['black latex bodysuit','glossy latex','form-fitting dress','casual jeans','elegant gown','sportswear','bikini'],
-  scene: ['white studio background','dark studio','night city bokeh','luxury interior','beach sunset','forest outdoor'],
-  photo: ['full body shot','portrait','half body','3/4 view','low angle','eye level','dramatic lighting','soft studio lighting'],
-  quality: ['photorealistic','8k','professional photography','sharp focus','high detail','cinematic','RAW photo'],
+  pose: ['standing facing camera','walking mid-step','sitting edge of bed','crouching dynamic','kneeling on bed','lying down elegant','back view over shoulder','low angle power pose'],
+  outfit: ['black latex bodysuit','glossy latex leggings','black latex catsuit','form-fitting dress','elegant gown','sportswear','bikini'],
+  scene: ['white studio background','dark studio','night city bokeh','luxury interior','urban rooftop','beach sunset','industrial parking'],
+  lighting: ['natural daylight soft','cinematic warm key light','dramatic hard lighting','studio soft beauty light','golden hour outdoor','rim light silhouette'],
+  photo: ['full body shot','close-up portrait','half body waist up','85mm shallow depth of field','low angle leg elongation','extreme close-up centered'],
+  quality: ['photorealistic, ultra detailed','sharp focus','8k','luxury fashion editorial','no distortion, perfect anatomy','no text, no watermark'],
 };
 
 function renderFields(img) {
@@ -1023,27 +1033,31 @@ function setTraining(val) {
 // ===================== EXPORT =====================
 function buildCaption(img, fmt) {
   const c = img.caption;
-  const parts = [c.identity, c.body, c.outfit, c.scene, c.photo, c.quality].map(p => (p||'').trim()).filter(Boolean);
+  const parts = [c.identity, c.body, c.pose, c.outfit, c.scene, c.lighting, c.photo, c.quality].map(p => (p||'').trim()).filter(Boolean);
   if (fmt === 'comfy') return parts.join(', ');
   if (fmt === 'chatgpt') {
     let out = '';
     if (c.identity) out += `A photorealistic image of ${c.identity}. `;
     if (c.body) out += `${c.body}. `;
+    if (c.pose) out += `${c.pose}. `;
     if (c.outfit) out += `Wearing ${c.outfit}. `;
     if (c.scene) out += `Setting: ${c.scene}. `;
+    if (c.lighting) out += `${c.lighting}. `;
     if (c.photo) out += `${c.photo}. `;
     if (c.quality) out += `${c.quality}.`;
     return out.trim();
   }
   if (fmt === 'copilot') {
-    return parts.map((p, i) => i === 2 && p ? 'wearing ' + p : p).join(', ');
+    return parts.map((p, i) => i === 3 && p ? 'wearing ' + p : p).join(', ');
   }
   if (fmt === 'zonner') {
     let out = 'Generate a photorealistic image: ';
     if (c.identity) out += c.identity;
     if (c.body) out += ', ' + c.body;
+    if (c.pose) out += ', ' + c.pose;
     if (c.outfit) out += ', dressed in ' + c.outfit;
     if (c.scene) out += '. Scene: ' + c.scene;
+    if (c.lighting) out += '. Lighting: ' + c.lighting;
     if (c.photo) out += '. Style: ' + c.photo;
     if (c.quality) out += '. Quality: ' + c.quality;
     return out + '.';
@@ -1127,7 +1141,7 @@ function clearCaption() {
   if (!currentId) return;
   const img = project.images.find(i => i.id === currentId);
   if (!img) return;
-  img.caption = {identity:'', body:'', outfit:'', scene:'', photo:'', quality:''};
+  img.caption = {identity:'', body:'', pose:'', outfit:'', scene:'', lighting:'', photo:'', quality:''};
   renderFields(img); updateExport(); updateStats();
 }
 
@@ -1431,13 +1445,13 @@ function applyDbItem(idx) {
   if (!item) return;
   // Map db tab to caption field
   const keyMap = {
-    poses: 'photo',
-    outfits: 'outfit',
-    scenes: 'scene',
+    poses:    'pose',
+    outfits:  'outfit',
+    scenes:   'scene',
     identity: 'identity',
-    lighting: 'photo',
-    photo: 'photo',
-    quality: 'quality'
+    lighting: 'lighting',
+    photo:    'photo',
+    quality:  'quality'
   };
   const key = keyMap[currentDbTab] || 'identity';
   const el = document.getElementById('field_' + key);
