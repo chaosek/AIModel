@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Model Caption Manager</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0a0a0b;
+    --surface: #111114;
+    --surface2: #18181d;
+    --surface3: #1f1f26;
+    --border: #2a2a35;
+    --border2: #353545;
+    --accent: #c8a96e;
+    --accent2: #8b6fae;
+    --red: #d45f5f;
+    --green: #5fad8b;
+    --blue: #5f8fad;
+    --text: #e8e8f0;
+    --text2: #9898b0;
+    --text3: #606078;
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-mono: 'DM Mono', monospace;
+    --font-body: 'DM Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 13px;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    white-space: nowrap;
+  }
+  header .sep { color: var(--border2); }
+  #projectNameDisplay {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text3);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 3px;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+  #projectNameDisplay:hover { border-color: var(--border2); color: var(--text2); }
+  .stats {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text3);
+    flex-wrap: wrap;
+  }
+  .stats span b { color: var(--text2); }
+
+  /* TOOLBAR */
+  .toolbar {
+    display: flex;
+    gap: 6px;
+    padding: 7px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .btn {
+    padding: 5px 11px;
+    border: 1px solid var(--border2);
+    background: var(--surface2);
+    color: var(--text2);
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 12px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--surface3); color: var(--text); border-color: var(--accent); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.accent { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 500; }
+  .btn.accent:hover { background: #d4b97e; }
+  .btn.danger { border-color: var(--red); color: var(--red); }
+  .btn.danger:hover { background: rgba(212,95,95,0.15); }
+  .btn.purple { border-color: var(--accent2); color: var(--accent2); }
+  .btn.purple:hover { background: rgba(139,111,174,0.15); }
+  .btn.green { border-color: var(--green); color: var(--green); }
+  .btn.green:hover { background: rgba(95,173,139,0.15); }
+
+  .filter-group {
+    display: flex;
+    gap: 3px;
+    margin-left: auto;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .filter-btn {
+    padding: 4px 9px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text3);
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .filter-btn:hover { background: var(--surface3); color: var(--text2); border-color: var(--border2); }
+  .filter-btn.active { color: var(--accent); border-color: var(--accent); background: rgba(200,169,110,0.06); }
+
+  input[type=text].search {
+    padding: 5px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    width: 150px;
+  }
+  input[type=text].search:focus { outline: none; border-color: var(--accent); }
+
+  /* MAIN LAYOUT */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* GALLERY */
+  .gallery-panel {
+    width: 272px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .gallery-scroll {
+    overflow-y: auto;
+    flex: 1;
+    padding: 7px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    align-content: start;
+  }
+  .gallery-scroll::-webkit-scrollbar { width: 4px; }
+  .gallery-scroll::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .thumb {
+    aspect-ratio: 1;
+    border-radius: 3px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    position: relative;
+    background: var(--surface2);
+    transition: border-color 0.15s;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb.selected { border-color: var(--accent); }
+  .thumb.no-caption::after {
+    content: '!';
+    position: absolute; top: 2px; right: 2px;
+    width: 14px; height: 14px;
+    background: var(--red); border-radius: 50%;
+    font-size: 9px; font-weight: bold; color: #fff;
+    line-height: 14px; text-align: center;
+  }
+  .thumb.has-caption::after {
+    content: '✓';
+    position: absolute; top: 2px; right: 2px;
+    width: 14px; height: 14px;
+    background: var(--green); border-radius: 50%;
+    font-size: 9px; color: #fff;
+    line-height: 14px; text-align: center;
+  }
+  .thumb.is-done::before {
+    content: '✓';
+    position: absolute; inset: 0;
+    background: rgba(95,173,139,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; color: var(--green);
+    z-index: 1; border-radius: 2px;
+  }
+  .thumb.is-done { opacity: 0.45; }
+  .thumb-name {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.75);
+    font-size: 8px; font-family: var(--font-mono); color: var(--text2);
+    padding: 2px 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    opacity: 0; transition: opacity 0.15s;
+  }
+  .thumb:hover .thumb-name { opacity: 1; }
+  .source-badge {
+    position: absolute; top: 2px; left: 2px;
+    padding: 1px 4px; border-radius: 2px;
+    font-size: 8px; font-family: var(--font-mono); font-weight: 500;
+  }
+  .src-chatgpt { background: rgba(16,163,127,0.8); color: #fff; }
+  .src-zonner  { background: rgba(95,143,173,0.8); color: #fff; }
+  .src-copilot { background: rgba(139,111,174,0.8); color: #fff; }
+  .src-comfyui { background: rgba(200,169,110,0.8); color: #000; }
+  .src-unknown { background: rgba(80,80,100,0.8); color: #fff; }
+
+  /* EDITOR */
+  .editor-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .editor-top { display: flex; flex: 1; overflow: hidden; }
+
+  /* PREVIEW */
+  .preview-area {
+    width: 288px; flex-shrink: 0;
+    padding: 10px;
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+    overflow-y: auto;
+  }
+  .preview-area::-webkit-scrollbar { width: 4px; }
+  .preview-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .preview-img {
+    width: 100%; aspect-ratio: 1; object-fit: contain;
+    background: var(--surface2); border-radius: 6px; border: 1px solid var(--border);
+  }
+  .preview-placeholder {
+    width: 100%; aspect-ratio: 1;
+    background: var(--surface2); border-radius: 6px;
+    border: 1px dashed var(--border2);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3); font-size: 12px;
+  }
+  .meta-row { display: flex; flex-direction: column; gap: 3px; }
+  .meta-label {
+    font-size: 10px; font-family: var(--font-mono); color: var(--text3);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .meta-value { font-size: 12px; color: var(--text2); font-family: var(--font-mono); word-break: break-all; }
+  select.meta-select {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 4px 8px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px; width: 100%;
+  }
+  select.meta-select:focus { outline: none; border-color: var(--accent); }
+  .tag-grid { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+  .tag-chip {
+    padding: 2px 8px;
+    background: var(--surface3); border: 1px solid var(--border2);
+    border-radius: 3px; font-size: 11px; font-family: var(--font-mono); color: var(--text2);
+    cursor: pointer; transition: all 0.15s; user-select: none;
+  }
+  .tag-chip:hover { border-color: var(--accent); color: var(--accent); }
+  .tag-chip.active { background: rgba(200,169,110,0.15); border-color: var(--accent); color: var(--accent); }
+
+  /* AI REVIEW */
+  .ai-review-box {
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 6px; padding: 10px; font-size: 11px; font-family: var(--font-mono);
+  }
+  .ai-score-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+  .ai-score-badge {
+    padding: 2px 8px; border-radius: 3px; font-size: 12px; font-weight: 500;
+    font-family: var(--font-display); letter-spacing: 1px;
+  }
+  .score-5 { background: rgba(95,173,139,0.2); color: var(--green); border: 1px solid var(--green); }
+  .score-4 { background: rgba(95,173,139,0.1); color: #8fd4b0; border: 1px solid #8fd4b0; }
+  .score-3 { background: rgba(200,169,110,0.1); color: var(--accent); border: 1px solid var(--accent); }
+  .score-2 { background: rgba(212,95,95,0.1); color: #e08080; border: 1px solid #e08080; }
+  .score-1 { background: rgba(212,95,95,0.2); color: var(--red); border: 1px solid var(--red); }
+  .ai-cats { display: flex; flex-direction: column; gap: 4px; margin-bottom: 6px; }
+  .ai-cat-row { display: flex; align-items: center; gap: 6px; font-size: 10px; }
+  .ai-cat-label { color: var(--text3); width: 72px; flex-shrink: 0; }
+  .ai-cat-bar { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .ai-cat-fill { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.4s; }
+  .ai-cat-val { color: var(--text2); width: 16px; text-align: right; }
+  .ai-notes {
+    color: var(--text2); font-size: 10px; line-height: 1.6;
+    border-top: 1px solid var(--border); padding-top: 6px; margin-top: 4px;
+  }
+  .ai-train-rec { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 10px; }
+  .ai-train-yes { background: rgba(95,173,139,0.15); color: var(--green); border: 1px solid var(--green); }
+  .ai-train-no  { background: rgba(212,95,95,0.15); color: var(--red); border: 1px solid var(--red); }
+  .ai-train-maybe { background: rgba(200,169,110,0.1); color: var(--accent); border: 1px solid var(--accent); }
+  .ai-spinning { animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* CAPTION FIELDS */
+  .fields-area {
+    flex: 1; overflow-y: auto; padding: 10px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .fields-area::-webkit-scrollbar { width: 4px; }
+  .fields-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .field-group { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .field-group-header {
+    display: flex; align-items: center; gap: 8px; padding: 6px 10px;
+    background: var(--surface2); border-bottom: 1px solid var(--border);
+    cursor: pointer; user-select: none;
+  }
+  .field-group-header:hover { background: var(--surface3); }
+  .group-icon { font-size: 14px; }
+  .group-name { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
+  .group-toggle { margin-left: auto; color: var(--text3); font-size: 10px; transition: transform 0.2s; }
+  .field-group.collapsed .group-toggle { transform: rotate(-90deg); }
+  .field-group-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+  .field-group.collapsed .field-group-body { display: none; }
+  .field-row { display: flex; flex-direction: column; gap: 3px; }
+  .field-label { font-size: 10px; font-family: var(--font-mono); color: var(--text3); }
+  textarea.field-input, input.field-input {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 8px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px;
+    resize: none; transition: border-color 0.15s; width: 100%;
+  }
+  textarea.field-input { min-height: 50px; }
+  textarea.field-input:focus, input.field-input:focus { outline: none; border-color: var(--accent); }
+
+  /* EXPORT PANEL */
+  .export-panel {
+    border-top: 1px solid var(--border); padding: 8px 12px;
+    background: var(--surface); flex-shrink: 0;
+  }
+  .export-tabs { display: flex; gap: 4px; margin-bottom: 7px; }
+  .export-tab {
+    padding: 4px 12px; border: 1px solid var(--border); background: transparent;
+    color: var(--text3); border-radius: 3px; cursor: pointer;
+    font-family: var(--font-mono); font-size: 11px; transition: all 0.15s;
+  }
+  .export-tab:hover { color: var(--text2); border-color: var(--border2); }
+  .export-tab.active { color: var(--accent); border-color: var(--accent); background: rgba(200,169,110,0.08); }
+  .export-output {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 4px;
+    padding: 7px 10px; font-family: var(--font-mono); font-size: 11px; color: var(--text2);
+    min-height: 44px; max-height: 76px; overflow-y: auto;
+    white-space: pre-wrap; word-break: break-word; line-height: 1.5;
+  }
+  .export-actions { display: flex; gap: 6px; margin-top: 6px; }
+
+  /* DATABASE */
+  .db-panel {
+    width: 210px; flex-shrink: 0; border-left: 1px solid var(--border);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .db-header {
+    padding: 7px 10px; background: var(--surface2); border-bottom: 1px solid var(--border);
+    font-family: var(--font-mono); font-size: 11px; color: var(--text2);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  .db-tabs { display: flex; border-bottom: 1px solid var(--border); }
+  .db-tab {
+    flex: 1; padding: 5px; text-align: center; cursor: pointer;
+    font-size: 10px; font-family: var(--font-mono); color: var(--text3);
+    border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .db-tab:hover { color: var(--text2); }
+  .db-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .db-content { flex: 1; overflow-y: auto; padding: 6px; }
+  .db-content::-webkit-scrollbar { width: 4px; }
+  .db-content::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .db-item {
+    padding: 5px 7px; border-radius: 4px; cursor: pointer; margin-bottom: 3px;
+    border: 1px solid transparent; transition: all 0.15s;
+    font-size: 11px; font-family: var(--font-mono); color: var(--text2);
+  }
+  .db-item:hover { background: var(--surface2); border-color: var(--border); color: var(--text); }
+  .db-item .db-item-name { font-weight: 500; color: var(--text); font-size: 11px; }
+  .db-item .db-item-tags { color: var(--text3); font-size: 10px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .db-add-form { padding: 7px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+  input.db-input {
+    background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    padding: 4px 8px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px; width: 100%;
+  }
+  input.db-input:focus { outline: none; border-color: var(--accent); }
+
+  /* EMPTY STATE */
+  .empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 100%; gap: 10px; color: var(--text3); font-size: 13px;
+  }
+  .empty-icon { font-size: 36px; opacity: 0.3; }
+
+  /* MODALS */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 20px; min-width: 380px; max-width: 560px; width: 90vw;
+  }
+  .modal h3 { font-family: var(--font-display); font-size: 20px; color: var(--accent); margin-bottom: 10px; letter-spacing: 1px; }
+  .modal p { color: var(--text2); font-size: 12px; margin-bottom: 10px; line-height: 1.6; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+  .modal .field-row { margin-bottom: 8px; }
+
+  /* NOTIFY */
+  .notify {
+    position: fixed; bottom: 16px; right: 16px;
+    padding: 8px 16px; background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: 4px; font-family: var(--font-mono); font-size: 12px; color: var(--text);
+    z-index: 2000; pointer-events: none;
+    opacity: 0; transform: translateY(8px); transition: all 0.2s;
+  }
+  .notify.show { opacity: 1; transform: translateY(0); }
+  .notify.success { border-color: var(--green); color: var(--green); }
+  .notify.error { border-color: var(--red); color: var(--red); }
+
+  /* UNSUPPORTED BANNER */
+  #unsupportedBanner {
+    display: none;
+    background: rgba(212,95,95,0.15); border-bottom: 1px solid var(--red);
+    padding: 8px 16px; font-size: 12px; color: var(--red);
+    font-family: var(--font-mono); text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div id="unsupportedBanner">
+  ⚠ File System Access API not supported in this browser. Use Chrome or Edge for full functionality.
+</div>
+
+<header>
+  <h1>AI MODEL</h1>
+  <span class="sep">|</span>
+  <span id="projectNameDisplay" onclick="showSettingsModal()" title="Click to configure project">Caption Manager ▾</span>
+  <div class="stats">
+    <span><b id="statTotal">0</b> images</span>
+    <span><b id="statCaptioned">0</b> captioned</span>
+    <span><b id="statMissing">0</b> missing</span>
+    <span><b id="statDone">0</b> done ✓</span>
+  </div>
+</header>
+
+<div class="toolbar">
+  <button class="btn accent" onclick="openProject()">📂 Open Project Folder</button>
+  <button class="btn" onclick="saveProject()">💾 Save Project</button>
+  <button class="btn" onclick="exportAllTxt()">⬇ Export All .txt</button>
+  <button class="btn" onclick="showBulkModal()">⚡ Bulk Normalize</button>
+  <button class="btn purple" onclick="exportReviewZip()">📦 Export ZIP for Review</button>
+  <button class="btn purple" onclick="importReviewJson()">📥 Import Reviews JSON</button>
+
+  <div class="filter-group">
+    <input type="text" class="search" id="searchInput" placeholder="Search..." oninput="renderGallery()">
+    <button class="filter-btn active" onclick="setFilter('all',this)">All</button>
+    <button class="filter-btn" onclick="setFilter('missing',this)">No caption 🔴</button>
+    <button class="filter-btn" onclick="setFilter('done',this)">Captioned ✓</button>
+    <button class="filter-btn" onclick="setFilter('notdone',this)">Unprocessed</button>
+    <button class="filter-btn" onclick="setFilter('isdone',this)">Processed ✓</button>
+    <button class="filter-btn" onclick="setFilter('chatgpt',this)">GPT</button>
+    <button class="filter-btn" onclick="setFilter('zonner',this)">Zonner</button>
+    <button class="filter-btn" onclick="setFilter('copilot',this)">Copilot</button>
+    <button class="filter-btn" onclick="setFilter('comfyui',this)">ComfyUI</button>
+  </div>
+</div>
+
+<div class="main">
+  <!-- GALLERY -->
+  <div class="gallery-panel">
+    <div class="gallery-scroll" id="galleryGrid">
+      <div class="empty-state" style="grid-column:1/-1">
+        <div class="empty-icon">🖼</div>
+        <span>Open a project folder to begin</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDITOR -->
+  <div class="editor-panel">
+    <div class="editor-top">
+
+      <!-- PREVIEW + META -->
+      <div class="preview-area">
+        <div id="previewPlaceholder" class="preview-placeholder">Select an image</div>
+        <img id="previewImg" class="preview-img" style="display:none" alt="">
+
+        <div class="meta-row">
+          <div class="meta-label">Filename</div>
+          <div class="meta-value" id="metaFilename">—</div>
+        </div>
+        <div class="meta-row">
+          <div class="meta-label">Source</div>
+          <select class="meta-select" id="metaSource" onchange="onMetaChange()">
+            <option value="unknown">Unknown</option>
+            <option value="chatgpt">ChatGPT / DALL-E</option>
+            <option value="zonner">Zonner</option>
+            <option value="copilot">Copilot / Bing</option>
+            <option value="comfyui">ComfyUI / Flux</option>
+          </select>
+        </div>
+        <div class="meta-row">
+          <div class="meta-label">Rating</div>
+          <div class="tag-grid" id="ratingChips">
+            <span class="tag-chip" data-val="1" onclick="setRating(1)">★</span>
+            <span class="tag-chip" data-val="2" onclick="setRating(2)">★★</span>
+            <span class="tag-chip" data-val="3" onclick="setRating(3)">★★★</span>
+            <span class="tag-chip" data-val="4" onclick="setRating(4)">★★★★</span>
+            <span class="tag-chip" data-val="5" onclick="setRating(5)">★★★★★</span>
+          </div>
+        </div>
+        <div class="meta-row">
+          <div class="meta-label">Use for Training</div>
+          <div class="tag-grid">
+            <span class="tag-chip" id="trainYes" onclick="setTraining(true)">✓ Yes</span>
+            <span class="tag-chip" id="trainNo" onclick="setTraining(false)">✗ No</span>
+          </div>
+        </div>
+
+        <button class="btn" style="margin-top:2px" onclick="copyCaption()">📋 Copy Caption</button>
+        <button class="btn" onclick="saveTxt()">💾 Save .txt</button>
+        <button class="btn purple" id="aiBtnMain" onclick="runAiReview()">🤖 AI Review</button>
+        <button class="btn green" id="doneBtn" onclick="markDone()">✓ Mark as Processed</button>
+        <button class="btn danger" onclick="clearCaption()">✕ Clear Caption</button>
+        <div id="aiReviewResult"></div>
+      </div>
+
+      <!-- CAPTION FIELDS -->
+      <div class="fields-area" id="fieldsArea">
+        <div class="empty-state">
+          <div class="empty-icon">✏️</div>
+          <span>Select an image to edit its caption</span>
+        </div>
+      </div>
+
+      <!-- DATABASE -->
+      <div class="db-panel">
+        <div class="db-header">📚 Library</div>
+        <div class="db-tabs">
+          <div class="db-tab active" data-dbtab="poses" onclick="switchDbTab('poses',this)">Poses</div>
+          <div class="db-tab" data-dbtab="outfits" onclick="switchDbTab('outfits',this)">Outfits</div>
+          <div class="db-tab" data-dbtab="scenes" onclick="switchDbTab('scenes',this)">Scenes</div>
+        </div>
+        <div class="db-content" id="dbContent"></div>
+        <div class="db-add-form">
+          <input class="db-input" id="dbNewName" placeholder="Name">
+          <input class="db-input" id="dbNewTags" placeholder="Tags (comma separated)">
+          <button class="btn" style="width:100%" onclick="addDbItem()">＋ Add</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="export-panel">
+      <div class="export-tabs">
+        <button class="export-tab active" data-fmt="comfy" onclick="setExportFmt('comfy',this)">ComfyUI/Flux</button>
+        <button class="export-tab" data-fmt="chatgpt" onclick="setExportFmt('chatgpt',this)">ChatGPT</button>
+        <button class="export-tab" data-fmt="copilot" onclick="setExportFmt('copilot',this)">Copilot</button>
+        <button class="export-tab" data-fmt="zonner" onclick="setExportFmt('zonner',this)">Zonner</button>
+      </div>
+      <div class="export-output" id="exportOutput">— select an image —</div>
+      <div class="export-actions">
+        <button class="btn" onclick="copyExport()">📋 Copy</button>
+        <button class="btn accent" onclick="saveTxt()">💾 Save .txt</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <h3>PROJECT SETTINGS</h3>
+    <p>Configure your AI model / character. These settings pre-fill caption defaults and guide the AI review.</p>
+    <div class="field-row">
+      <div class="field-label">Project / Character Name</div>
+      <input class="field-input" id="cfgName" placeholder="e.g. maya01noir">
+    </div>
+    <div class="field-row">
+      <div class="meta-label" style="margin-bottom:4px">Default Caption Blocks</div>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Identity (trigger word, face description)</div>
+      <textarea class="field-input" id="cfgIdentity" rows="2" style="min-height:40px"></textarea>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Body (proportions, figure)</div>
+      <textarea class="field-input" id="cfgBody" rows="2" style="min-height:40px"></textarea>
+    </div>
+    <div class="field-row">
+      <div class="field-label">Quality (realism, resolution tags)</div>
+      <textarea class="field-input" id="cfgQuality" rows="2" style="min-height:40px"></textarea>
+    </div>
+    <div class="field-row">
+      <div class="field-label">AI Review character description (for AI review prompt)</div>
+      <textarea class="field-input" id="cfgAiDesc" rows="3" style="min-height:56px" placeholder="Describe your character for AI review context..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeSettingsModal()">Cancel</button>
+      <button class="btn accent" onclick="saveSettings()">Save Settings</button>
+    </div>
+  </div>
+</div>
+
+<!-- BULK MODAL -->
+<div class="modal-overlay" id="bulkModal">
+  <div class="modal">
+    <h3>BULK NORMALIZE</h3>
+    <p>Apply a default caption to all images that currently have no caption. Existing captions are not affected.</p>
+    <div class="field-row" style="margin-bottom:8px">
+      <div class="field-label">Default caption for uncaptioned images</div>
+      <textarea class="field-input" id="bulkDefault" rows="4" style="min-height:80px"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeBulkModal()">Cancel</button>
+      <button class="btn accent" onclick="doBulkNormalize()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<div class="notify" id="notify"></div>
+
+<script>
+// ===================== CONFIG =====================
+let config = {
+  name: 'My AI Model',
+  identity: '',
+  body: '',
+  quality: 'photorealistic, 8k, professional photography, sharp focus, high detail',
+  aiDesc: 'A photorealistic AI-generated model character.',
+};
+
+// ===================== STATE =====================
+let project = {
+  projectDir: null,
+  images: [],
+  db: {
+    poses: [
+      {name:"Standing front", tags:"standing, facing camera, full body"},
+      {name:"3/4 view", tags:"three quarter view, slight turn"},
+      {name:"Sitting", tags:"sitting, relaxed pose"},
+      {name:"Portrait", tags:"portrait, close-up, face focus"},
+      {name:"Half-body", tags:"half body, waist up"},
+      {name:"Lying down", tags:"lying down, reclining"},
+      {name:"Back view", tags:"back view, looking over shoulder"},
+    ],
+    outfits: [
+      {name:"Casual", tags:"casual outfit, everyday clothing"},
+      {name:"Elegant dress", tags:"elegant dress, evening gown"},
+      {name:"Sportswear", tags:"sportswear, athletic wear"},
+      {name:"Bikini", tags:"bikini, swimwear"},
+      {name:"Business", tags:"business attire, blazer, professional"},
+    ],
+    scenes: [
+      {name:"White studio", tags:"white studio background, clean background, professional studio"},
+      {name:"Dark studio", tags:"dark studio, black background, dramatic lighting"},
+      {name:"Night city", tags:"night city, urban background, city lights bokeh"},
+      {name:"Forest", tags:"forest background, natural light, outdoor"},
+      {name:"Beach", tags:"beach, ocean background, sunset"},
+      {name:"Luxury interior", tags:"luxury interior, modern apartment, soft lighting"},
+      {name:"Industrial", tags:"industrial setting, warehouse, concrete walls"},
+    ]
+  }
+};
+
+let currentId = null;
+let currentFilter = 'all';
+let currentDbTab = 'poses';
+let currentExportFmt = 'comfy';
+let dirHandle = null;
+
+// ===================== INIT =====================
+function init() {
+  // Check API support
+  if (!window.showDirectoryPicker) {
+    document.getElementById('unsupportedBanner').style.display = 'block';
+  }
+  // Load config from localStorage
+  try {
+    const saved = localStorage.getItem('aiCaptionConfig');
+    if (saved) config = {...config, ...JSON.parse(saved)};
+  } catch(e) {}
+  updateProjectDisplay();
+  renderDbContent();
+}
+
+function updateProjectDisplay() {
+  document.getElementById('projectNameDisplay').textContent = config.name + ' ▾';
+}
+
+// ===================== SETTINGS =====================
+function showSettingsModal() {
+  document.getElementById('cfgName').value = config.name;
+  document.getElementById('cfgIdentity').value = config.identity;
+  document.getElementById('cfgBody').value = config.body;
+  document.getElementById('cfgQuality').value = config.quality;
+  document.getElementById('cfgAiDesc').value = config.aiDesc;
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettingsModal() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+function saveSettings() {
+  config.name = document.getElementById('cfgName').value.trim() || 'My AI Model';
+  config.identity = document.getElementById('cfgIdentity').value.trim();
+  config.body = document.getElementById('cfgBody').value.trim();
+  config.quality = document.getElementById('cfgQuality').value.trim();
+  config.aiDesc = document.getElementById('cfgAiDesc').value.trim();
+  try { localStorage.setItem('aiCaptionConfig', JSON.stringify(config)); } catch(e) {}
+  updateProjectDisplay();
+  // Update bulk default textarea
+  document.getElementById('bulkDefault').value = buildDefaultCaption();
+  closeSettingsModal();
+  notify('Settings saved ✓', 'success');
+}
+
+function buildDefaultCaption() {
+  return [config.identity, config.body, config.quality].filter(Boolean).join(', ');
+}
+
+// ===================== OPEN PROJECT =====================
+async function openProject() {
+  if (!window.showDirectoryPicker) {
+    notify('File System API not supported. Use Chrome or Edge.', 'error');
+    return;
+  }
+  try {
+    dirHandle = await window.showDirectoryPicker({mode:'readwrite'});
+    project.projectDir = dirHandle.name;
+    await loadProjectFile();
+    await scanImages();
+    notify('Project loaded: ' + dirHandle.name, 'success');
+  } catch(e) {
+    if (e.name !== 'AbortError') notify('Error: ' + e.message, 'error');
+  }
+}
+
+async function loadProjectFile() {
+  try {
+    const fh = await dirHandle.getFileHandle('ai_caption_project.json');
+    const f = await fh.getFile();
+    const data = JSON.parse(await f.text());
+    if (data.db) project.db = data.db;
+    if (data.config) { config = {...config, ...data.config}; updateProjectDisplay(); }
+    project._savedImages = {};
+    if (data.images) data.images.forEach(img => project._savedImages[img.name] = img);
+  } catch(e) { /* no project file yet */ }
+}
+
+async function scanImages() {
+  project.images = [];
+  const exts = ['jpg','jpeg','png','webp'];
+  for await (const entry of dirHandle.values()) {
+    if (entry.kind !== 'file') continue;
+    const ext = entry.name.split('.').pop().toLowerCase();
+    if (!exts.includes(ext)) continue;
+
+    const file = await entry.getFile();
+    const src = URL.createObjectURL(file);
+    const baseName = entry.name.replace(/\.[^.]+$/, '');
+
+    let txtHandle = null, rawCaption = '';
+    try {
+      txtHandle = await dirHandle.getFileHandle(baseName + '.txt');
+      const tf = await txtHandle.getFile();
+      rawCaption = await tf.text();
+    } catch(e) {}
+
+    const saved = project._savedImages?.[entry.name] || {};
+    const caption = saved.caption || parseCaption(rawCaption);
+
+    project.images.push({
+      id: entry.name, name: entry.name, baseName, src,
+      fileHandle: entry, txtHandle, caption, rawCaption,
+      source: saved.source || guessSource(entry.name),
+      rating: saved.rating || 0,
+      training: saved.training !== undefined ? saved.training : true,
+      done: saved.done || false,
+      aiReview: saved.aiReview || null,
+    });
+  }
+  renderGallery();
+  updateStats();
+  renderDbContent();
+  // Init bulk default
+  document.getElementById('bulkDefault').value = buildDefaultCaption();
+}
+
+function guessSource(name) {
+  const n = name.toLowerCase();
+  if (n.includes('dalle') || n.includes('chatgpt') || n.includes('gpt')) return 'chatgpt';
+  if (n.includes('zonner') || n.includes('zoner')) return 'zonner';
+  if (n.includes('copilot') || n.includes('bing')) return 'copilot';
+  if (n.includes('flux') || n.includes('comfy')) return 'comfyui';
+  return 'unknown';
+}
+
+// ===================== CAPTION PARSING =====================
+function parseCaption(raw) {
+  if (!raw || !raw.trim()) return {identity:'', body:'', outfit:'', scene:'', photo:'', quality:''};
+  const tags = raw.split(',').map(t => t.trim()).filter(Boolean);
+  const bodyKw = ['figure','bust','waist','legs','athletic','slender','body','petite','curvy','height'];
+  const outfitKw = ['latex','dress','outfit','wearing','bodysuit','jeans','skirt','top','bikini','swimwear','jacket','corset','boots','heels','shirt','pants'];
+  const sceneKw = ['background','studio','city','beach','forest','interior','outdoor','indoor','setting','room','street','landscape'];
+  const photoKw = ['shot','view','portrait','full body','half body','angle','lighting','bokeh','depth of field','close-up','wide','medium','composition'];
+  const qualityKw = ['photorealistic','realistic','8k','4k','hd','sharp','detailed','professional','photography','cinematic'];
+  const buckets = {identity:[], body:[], outfit:[], scene:[], photo:[], quality:[]};
+  tags.forEach(t => {
+    const tl = t.toLowerCase();
+    if (qualityKw.some(k=>tl.includes(k))) buckets.quality.push(t);
+    else if (photoKw.some(k=>tl.includes(k))) buckets.photo.push(t);
+    else if (sceneKw.some(k=>tl.includes(k))) buckets.scene.push(t);
+    else if (outfitKw.some(k=>tl.includes(k))) buckets.outfit.push(t);
+    else if (bodyKw.some(k=>tl.includes(k))) buckets.body.push(t);
+    else buckets.identity.push(t);
+  });
+  return {
+    identity: buckets.identity.join(', '),
+    body: buckets.body.join(', '),
+    outfit: buckets.outfit.join(', '),
+    scene: buckets.scene.join(', '),
+    photo: buckets.photo.join(', '),
+    quality: buckets.quality.join(', '),
+  };
+}
+
+// ===================== GALLERY =====================
+function renderGallery() {
+  const grid = document.getElementById('galleryGrid');
+  const search = document.getElementById('searchInput').value.toLowerCase();
+  const imgs = project.images.filter(img => {
+    if (search && !img.name.toLowerCase().includes(search)) return false;
+    if (currentFilter === 'missing') return !hasMeaningfulCaption(img);
+    if (currentFilter === 'done') return hasMeaningfulCaption(img);
+    if (currentFilter === 'notdone') return !img.done;
+    if (currentFilter === 'isdone') return img.done;
+    if (currentFilter === 'chatgpt') return img.source === 'chatgpt';
+    if (currentFilter === 'zonner') return img.source === 'zonner';
+    if (currentFilter === 'copilot') return img.source === 'copilot';
+    if (currentFilter === 'comfyui') return img.source === 'comfyui';
+    return true;
+  });
+
+  if (!imgs.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><span>No images found</span></div>`;
+    return;
+  }
+  grid.innerHTML = imgs.map(img => `
+    <div class="thumb ${img.id===currentId?'selected':''} ${hasMeaningfulCaption(img)?'has-caption':'no-caption'} ${img.done?'is-done':''}"
+         id="thumb_${CSS.escape(img.id)}" onclick="selectImage('${escJ(img.id)}')">
+      <img src="${img.src}" loading="lazy" alt="">
+      <div class="source-badge src-${img.source}">${srcLabel(img.source)}</div>
+      <div class="thumb-name">${img.name}</div>
+    </div>
+  `).join('');
+}
+
+function hasMeaningfulCaption(img) {
+  return Object.values(img.caption).some(v => v.trim().length > 0);
+}
+function srcLabel(s) {
+  return {chatgpt:'GPT', zonner:'ZNR', copilot:'CPL', comfyui:'FLX', unknown:'?'}[s] || '?';
+}
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  renderGallery();
+}
+
+// ===================== SELECT IMAGE =====================
+function selectImage(id) {
+  currentId = id;
+  const img = project.images.find(i => i.id === id);
+  if (!img) return;
+
+  document.querySelectorAll('.thumb').forEach(t => t.classList.remove('selected'));
+  const th = document.getElementById('thumb_' + CSS.escape(id));
+  if (th) { th.classList.add('selected'); th.scrollIntoView({block:'nearest'}); }
+
+  document.getElementById('previewPlaceholder').style.display = 'none';
+  const pi = document.getElementById('previewImg');
+  pi.src = img.src; pi.style.display = '';
+  document.getElementById('metaFilename').textContent = img.name;
+  document.getElementById('metaSource').value = img.source;
+
+  document.querySelectorAll('#ratingChips .tag-chip').forEach(c => {
+    c.classList.toggle('active', parseInt(c.dataset.val) <= img.rating);
+  });
+  document.getElementById('trainYes').classList.toggle('active', img.training);
+  document.getElementById('trainNo').classList.toggle('active', !img.training);
+
+  renderFields(img);
+  updateExport();
+
+  const resultEl = document.getElementById('aiReviewResult');
+  if (img.aiReview) renderAiResult(img.aiReview, resultEl);
+  else resultEl.innerHTML = '';
+
+  const doneBtn = document.getElementById('doneBtn');
+  if (img.done) {
+    doneBtn.textContent = '↩ Unmark Processed';
+    doneBtn.style.background = 'rgba(95,173,139,0.15)';
+  } else {
+    doneBtn.textContent = '✓ Mark as Processed';
+    doneBtn.style.background = '';
+  }
+}
+
+// ===================== FIELDS =====================
+const FIELD_DEFS = [
+  { key:'identity', icon:'👤', name:'Identity', placeholder:'trigger word, face description, hair, eyes, makeup...', hint:'Trigger word + appearance' },
+  { key:'body',     icon:'🧍', name:'Body & Proportions', placeholder:'figure, proportions, height...', hint:'Body description' },
+  { key:'outfit',   icon:'👗', name:'Outfit', placeholder:'clothing, material, colors...', hint:'What she/he is wearing' },
+  { key:'scene',    icon:'🌆', name:'Scene & Environment', placeholder:'background, setting, location...', hint:'Where the photo is set' },
+  { key:'photo',    icon:'📷', name:'Photo Parameters', placeholder:'shot type, angle, lighting, composition...', hint:'Technical photo aspects' },
+  { key:'quality',  icon:'✨', name:'Realism & Quality', placeholder:'photorealistic, 8k, sharp focus...', hint:'Quality tags' },
+];
+
+const QUICK_TAGS = {
+  identity: [],
+  body: ['slender athletic figure','full bust','narrow waist','long legs','hourglass figure','toned abs','petite frame'],
+  outfit: ['black latex bodysuit','glossy latex','form-fitting dress','casual jeans','elegant gown','sportswear','bikini'],
+  scene: ['white studio background','dark studio','night city bokeh','luxury interior','beach sunset','forest outdoor'],
+  photo: ['full body shot','portrait','half body','3/4 view','low angle','eye level','dramatic lighting','soft studio lighting'],
+  quality: ['photorealistic','8k','professional photography','sharp focus','high detail','cinematic','RAW photo'],
+};
+
+function renderFields(img) {
+  const area = document.getElementById('fieldsArea');
+  area.innerHTML = FIELD_DEFS.map(def => `
+    <div class="field-group" id="fg_${def.key}">
+      <div class="field-group-header" onclick="toggleGroup('${def.key}')">
+        <span class="group-icon">${def.icon}</span>
+        <span class="group-name">${def.name}</span>
+        <span class="group-toggle">▾</span>
+      </div>
+      <div class="field-group-body">
+        <div class="field-row">
+          <div class="field-label">${def.hint}</div>
+          <textarea class="field-input" id="field_${def.key}" placeholder="${def.placeholder}"
+            oninput="onFieldChange('${def.key}')">${escH(img.caption[def.key]||'')}</textarea>
+        </div>
+        ${(QUICK_TAGS[def.key]||[]).length ? `<div class="tag-grid">${(QUICK_TAGS[def.key]).map(t =>
+          `<span class="tag-chip" onclick="appendTag('${def.key}','${escJ(t)}')">${t}</span>`
+        ).join('')}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function toggleGroup(key) {
+  document.getElementById('fg_' + key).classList.toggle('collapsed');
+}
+
+function onFieldChange(key) {
+  if (!currentId) return;
+  const img = project.images.find(i => i.id === currentId);
+  if (!img) return;
+  img.caption[key] = document.getElementById('field_' + key).value;
+  updateExport();
+  updateStats();
+}
+
+function appendTag(key, tag) {
+  const el = document.getElementById('field_' + key);
+  if (!el) return;
+  el.value = el.value.trim() ? el.value.trim() + ', ' + tag : tag;
+  onFieldChange(key);
+}
+
+// ===================== META =====================
+function onMetaChange() {
+  if (!currentId) return;
+  const img = project.images.find(i => i.id === currentId);
+  if (!img) return;
+  img.source = document.getElementById('metaSource').value;
+  renderGallery();
+}
+function setRating(val) {
+  if (!currentId) return;
+  const img = project.images.find(i => i.id === currentId);
+  if (!img) return;
+  img.rating = img.rating === val ? 0 : val;
+  document.querySelectorAll('#ratingChips .tag-chip').forEach(c => {
+    c.classList.toggle('active', parseInt(c.dataset.val) <= img.rating);
+  });
+}
+function setTraining(val) {
+  if (!currentId) return;
+  const img = project.images.find(i => i.id === currentId);
+  if (!img) return;
+  img.training = val;
+  document.getElementById('trainYes').classList.toggle('active', val);
+  document.getElementById('trainNo').classList.toggle('active', !val);
+}
+
+// ===================== EXPORT =====================
+function buildCaption(img, fmt) {
+  const c = img.caption;
+  const parts = [c.identity, c.body, c.outfit, c.scene, c.photo, c.quality].map(p => (p||'').trim()).filter(Boolean);
+  if (fmt === 'comfy') return parts.join(', ');
+  if (fmt === 'chatgpt') {
+    let out = '';
+    if (c.identity) out += `A photorealistic image of ${c.identity}. `;
+    if (c.body) out += `${c.body}. `;
+    if (c.outfit) out += `Wearing ${c.outfit}. `;
+    if (c.scene) out += `Setting: ${c.scene}. `;
+    if (c.photo) out += `${c.photo}. `;
+    if (c.quality) out += `${c.quality}.`;
+    return out.trim();
+  }
+  if (fmt === 'copilot') {
+    return parts.map((p, i) => i === 2 && p ? 'wearing ' + p : p).join(', ');
+  }
+  if (fmt === 'zonner') {
+    let out = 'Generate a photorealistic image: ';
+    if (c.identity) out += c.identity;
+    if (c.body) out += ', ' + c.body;
+    if (c.outfit) out += ', dressed in ' + c.outfit;
+    if (c.scene) out += '. Scene: ' + c.scene;
+    if (c.photo) out += '. Style: ' + c.photo;
+    if (c.quality) out += '. Quality: ' + c.quality;
+    return out + '.';
+  }
+  return parts.join(', ');
+}
+
+function setExportFmt(fmt, el) {
+  currentExportFmt = fmt;
+  document.querySelectorAll('.export-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  updateExport();
+}
+function updateExport() {
+  const out = document.getElementById('exportOutput');
+  if (!currentId) { out.textContent = '— select an image —'; return; }
+  const img = project.images.find(i => i.id === currentId);
+  if (img) out.textContent = buildCaption(img, currentExportFmt);
+}
+function copyExport() {
+  navigator.clipboard.writeText(document.getElementById('exportOutput').textContent)
+    .then(() => notify('Copied!', 'success'));
+}
+function copyCaption() { copyExport(); }
+
+// ===================== SAVE =====================
+async function saveTxt() {
+  if (!currentId || !dirHandle) { notify('Open a project folder first', 'error'); return; }
+  const img = project.images.find(i => i.id === currentId);
+  if (!img) return;
+  try {
+    const txt = buildCaption(img, 'comfy');
+    const fh = await dirHandle.getFileHandle(img.baseName + '.txt', {create:true});
+    const w = await fh.createWritable();
+    await w.write(txt); await w.close();
+    img.txtHandle = fh;
+    notify('Saved: ' + img.baseName + '.txt', 'success');
+    renderGallery();
+  } catch(e) { notify('Error: ' + e.message, 'error'); }
+}
+
+async function exportAllTxt() {
+  if (!dirHandle) { notify('Open a project folder first', 'error'); return; }
+  let count = 0;
+  for (const img of project.images) {
+    if (!hasMeaningfulCaption(img)) continue;
+    try {
+      const txt = buildCaption(img, 'comfy');
+      const fh = await dirHandle.getFileHandle(img.baseName + '.txt', {create:true});
+      const w = await fh.createWritable();
+      await w.write(txt); await w.close();
+      count++;
+    } catch(e) {}
+  }
+  notify(`Exported ${count} .txt files`, 'success');
+  renderGallery();
+}
+
+async function saveProject() {
+  if (!dirHandle) { notify('Open a project folder first', 'error'); return; }
+  try {
+    const data = {
+      version: 2,
+      config,
+      saved: new Date().toISOString(),
+      db: project.db,
+      images: project.images.map(img => ({
+        name: img.name, source: img.source, rating: img.rating,
+        training: img.training, caption: img.caption, done: img.done || false,
+        aiReview: img.aiReview || null,
+      }))
+    };
+    const fh = await dirHandle.getFileHandle('ai_caption_project.json', {create:true});
+    const w = await fh.createWritable();
+    await w.write(JSON.stringify(data, null, 2)); await w.close();
+    notify('Project saved ✓', 'success');
+  } catch(e) { notify('Error: ' + e.message, 'error'); }
+}
+
+function clearCaption() {
+  if (!currentId) return;
+  const img = project.images.find(i => i.id === currentId);
+  if (!img) return;
+  img.caption = {identity:'', body:'', outfit:'', scene:'', photo:'', quality:''};
+  renderFields(img); updateExport(); updateStats();
+}
+
+// ===================== BULK NORMALIZE =====================
+function showBulkModal() {
+  document.getElementById('bulkDefault').value = buildDefaultCaption();
+  document.getElementById('bulkModal').classList.add('open');
+}
+function closeBulkModal() { document.getElementById('bulkModal').classList.remove('open'); }
+function doBulkNormalize() {
+  const def = document.getElementById('bulkDefault').value;
+  const parsed = parseCaption(def);
+  let count = 0;
+  project.images.forEach(img => {
+    if (!hasMeaningfulCaption(img)) { img.caption = {...parsed}; count++; }
+  });
+  closeBulkModal();
+  renderGallery(); updateStats();
+  if (currentId) {
+    const img = project.images.find(i => i.id === currentId);
+    if (img) renderFields(img);
+  }
+  notify(`Normalized ${count} images`, 'success');
+}
+
+// ===================== MARK DONE =====================
+async function markDone() {
+  if (!currentId || !dirHandle) { notify('Open a project folder and select an image', 'error'); return; }
+  const img = project.images.find(i => i.id === currentId);
+  if (!img) return;
+
+  if (img.done) {
+    img.done = false;
+    document.getElementById('doneBtn').textContent = '✓ Mark as Processed';
+    document.getElementById('doneBtn').style.background = '';
+    renderGallery(); updateStats();
+    notify('Unmarked', '');
+    return;
+  }
+
+  try {
+    const doneDir = await dirHandle.getDirectoryHandle('_done', {create:true});
+    const srcFile = await img.fileHandle.getFile();
+    const destHandle = await doneDir.getFileHandle(img.name, {create:true});
+    const writable = await destHandle.createWritable();
+    await writable.write(await srcFile.arrayBuffer());
+    await writable.close();
+
+    if (img.txtHandle) {
+      try {
+        const txtFile = await img.txtHandle.getFile();
+        const txtDest = await doneDir.getFileHandle(img.baseName + '.txt', {create:true});
+        const txtW = await txtDest.createWritable();
+        await txtW.write(await txtFile.text());
+        await txtW.close();
+      } catch(e) {}
+    }
+
+    img.done = true;
+    document.getElementById('doneBtn').textContent = '↩ Unmark Processed';
+    document.getElementById('doneBtn').style.background = 'rgba(95,173,139,0.15)';
+    renderGallery(); updateStats();
+    notify('Copied to _done: ' + img.name, 'success');
+  } catch(e) { notify('Error: ' + e.message, 'error'); }
+}
+
+// ===================== BATCH REVIEW EXPORT/IMPORT =====================
+async function exportReviewZip() {
+  if (!project.images.length) { notify('No images loaded', 'error'); return; }
+  if (!window.JSZip) {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+
+  notify('Preparing ZIP...', '');
+  const zip = new JSZip();
+  const manifest = [];
+
+  const toExport = project.images.filter(img => {
+    if (currentFilter === 'missing') return !hasMeaningfulCaption(img);
+    if (currentFilter === 'done') return hasMeaningfulCaption(img);
+    if (currentFilter === 'notdone') return !img.done;
+    if (currentFilter === 'isdone') return img.done;
+    if (['chatgpt','zonner','copilot','comfyui'].includes(currentFilter)) return img.source === currentFilter;
+    return true;
+  });
+
+  if (!toExport.length) { notify('No images to export', 'error'); return; }
+  if (toExport.length > 80) {
+    if (!confirm(`Exporting ${toExport.length} images. Recommended max ~50 at a time. Continue?`)) return;
+  }
+
+  for (const img of toExport) {
+    try {
+      const resp = await fetch(img.src);
+      const blob = await resp.blob();
+      zip.file(img.name, blob);
+      manifest.push({
+        filename: img.name, source: img.source,
+        currentCaption: img.caption, currentRating: img.rating, training: img.training
+      });
+    } catch(e) {}
+  }
+
+  zip.file('_manifest.json', JSON.stringify({
+    project: config.name,
+    character: config.aiDesc,
+    exportDate: new Date().toISOString(),
+    totalImages: manifest.length,
+    instructions: `Evaluate each image for Flux LoRA training of AI model character: ${config.aiDesc}. Return reviews JSON.`,
+    images: manifest
+  }, null, 2));
+
+  const blob = await zip.generateAsync({type:'blob', compression:'DEFLATE', compressionOptions:{level:6}});
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob),
+    download: `review_batch_${toExport.length}imgs.zip`
+  });
+  a.click();
+  URL.revokeObjectURL(a.href);
+  notify(`ZIP exported: ${toExport.length} images`, 'success');
+}
+
+function importReviewJson() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.onchange = async () => {
+    try {
+      const data = JSON.parse(await input.files[0].text());
+      if (!data.reviews) { notify('Invalid JSON format — missing "reviews" key', 'error'); return; }
+      let applied = 0;
+      for (const rev of data.reviews) {
+        const img = project.images.find(i => i.name === rev.filename);
+        if (!img) continue;
+        img.aiReview = rev;
+        if (rev.overall) img.rating = rev.overall;
+        if (rev.training === 'no') img.training = false;
+        else if (rev.training === 'yes') img.training = true;
+        applied++;
+      }
+      renderGallery(); updateStats();
+      if (currentId) {
+        const img = project.images.find(i => i.id === currentId);
+        if (img) {
+          document.querySelectorAll('#ratingChips .tag-chip').forEach(c => {
+            c.classList.toggle('active', parseInt(c.dataset.val) <= img.rating);
+          });
+          document.getElementById('trainYes').classList.toggle('active', img.training);
+          document.getElementById('trainNo').classList.toggle('active', !img.training);
+          const resultEl = document.getElementById('aiReviewResult');
+          if (img.aiReview) renderAiResult(img.aiReview, resultEl);
+        }
+      }
+      notify(`Loaded ${applied} reviews`, 'success');
+    } catch(e) { notify('Error: ' + e.message, 'error'); }
+  };
+  input.click();
+}
+
+// ===================== AI REVIEW (direct API) =====================
+async function runAiReview() {
+  if (!currentId) { notify('Select an image first', 'error'); return; }
+  const img = project.images.find(i => i.id === currentId);
+  if (!img) return;
+
+  const btn = document.getElementById('aiBtnMain');
+  const resultEl = document.getElementById('aiReviewResult');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="ai-spinning">⟳</span> Analyzing...';
+  resultEl.innerHTML = '';
+
+  try {
+    const resp = await fetch(img.src);
+    const blob = await resp.blob();
+    const base64 = await new Promise((res, rej) => {
+      const r = new FileReader();
+      r.onload = () => res(r.result.split(',')[1]);
+      r.onerror = rej;
+      r.readAsDataURL(blob);
+    });
+
+    const systemPrompt = `You are an expert AI image analyst specializing in evaluating training images for Flux LoRA models. You are evaluating images for this AI model character: ${config.aiDesc || 'an AI-generated model character'}.
+
+Evaluate the image and respond ONLY with a JSON object, no markdown, no preamble:
+{"overall":<1-5>,"face":<1-5>,"body":<1-5>,"outfit":<1-5>,"technical":<1-5>,"training":"yes"|"no"|"maybe","notes":"<max 2 sentences on LoRA training suitability>"}
+
+Scoring: face=identity clarity/sharpness, body=figure visibility for training, outfit=clothing clarity, technical=sharpness/lighting/artifacts. training: yes=use, maybe=use with caution, no=skip.`;
+
+    const apiResp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        system: systemPrompt,
+        messages: [{role:'user', content:[
+          {type:'image', source:{type:'base64', media_type: blob.type||'image/jpeg', data: base64}},
+          {type:'text', text:'Evaluate this image for LoRA training.'}
+        ]}]
+      })
+    });
+
+    const data = await apiResp.json();
+    if (data.error) throw new Error(data.error.message);
+    const rawText = data.content?.find(b => b.type==='text')?.text || '';
+    const review = JSON.parse(rawText.replace(/```json|```/g,'').trim());
+
+    img.aiReview = review;
+    if (!img.rating && review.overall) {
+      img.rating = review.overall;
+      document.querySelectorAll('#ratingChips .tag-chip').forEach(c => {
+        c.classList.toggle('active', parseInt(c.dataset.val) <= img.rating);
+      });
+    }
+    if (review.training === 'no') { img.training = false; document.getElementById('trainNo').classList.add('active'); document.getElementById('trainYes').classList.remove('active'); }
+    else if (review.training === 'yes') { img.training = true; document.getElementById('trainYes').classList.add('active'); document.getElementById('trainNo').classList.remove('active'); }
+
+    renderAiResult(review, resultEl);
+    renderGallery();
+  } catch(e) {
+    resultEl.innerHTML = `<div style="color:var(--red);font-size:11px;font-family:var(--font-mono);margin-top:6px">Error: ${escH(e.message)}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🤖 AI Review';
+  }
+}
+
+function renderAiResult(r, el) {
+  const trainClass = r.training==='yes' ? 'ai-train-yes' : r.training==='no' ? 'ai-train-no' : 'ai-train-maybe';
+  const trainLabel = r.training==='yes' ? '✓ Use for training' : r.training==='no' ? '✗ Skip' : '~ Consider';
+  const cats = [{label:'Face', val:r.face},{label:'Body', val:r.body},{label:'Outfit', val:r.outfit},{label:'Technical', val:r.technical}];
+  el.innerHTML = `
+    <div class="ai-review-box">
+      <div class="ai-score-row">
+        <span class="ai-score-badge score-${Math.round(r.overall)}">${r.overall}/5</span>
+        <span class="ai-train-rec ${trainClass}">${trainLabel}</span>
+      </div>
+      <div class="ai-cats">${cats.map(c=>`
+        <div class="ai-cat-row">
+          <span class="ai-cat-label">${c.label}</span>
+          <div class="ai-cat-bar"><div class="ai-cat-fill" style="width:${(c.val||0)*20}%"></div></div>
+          <span class="ai-cat-val">${c.val||0}</span>
+        </div>`).join('')}
+      </div>
+      ${r.notes ? `<div class="ai-notes">${escH(r.notes)}</div>` : ''}
+    </div>`;
+}
+
+// ===================== DATABASE =====================
+function switchDbTab(tab, el) {
+  currentDbTab = tab;
+  document.querySelectorAll('.db-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderDbContent();
+}
+function renderDbContent() {
+  const items = project.db[currentDbTab] || [];
+  document.getElementById('dbContent').innerHTML = !items.length
+    ? `<div style="color:var(--text3);font-size:11px;padding:8px;font-family:var(--font-mono)">Empty</div>`
+    : items.map((item, i) => `
+      <div class="db-item" onclick="applyDbItem(${i})">
+        <div class="db-item-name">${escH(item.name)}</div>
+        <div class="db-item-tags">${escH(item.tags)}</div>
+      </div>`).join('');
+}
+function applyDbItem(idx) {
+  if (!currentId) { notify('Select an image first', 'error'); return; }
+  const item = project.db[currentDbTab][idx];
+  if (!item) return;
+  const keyMap = {poses:'photo', outfits:'outfit', scenes:'scene'};
+  const key = keyMap[currentDbTab];
+  const el = document.getElementById('field_' + key);
+  if (!el) return;
+  el.value = el.value.trim() ? el.value.trim() + ', ' + item.tags : item.tags;
+  onFieldChange(key);
+  notify('Added: ' + item.name, 'success');
+}
+function addDbItem() {
+  const name = document.getElementById('dbNewName').value.trim();
+  const tags = document.getElementById('dbNewTags').value.trim();
+  if (!name || !tags) { notify('Fill in name and tags', 'error'); return; }
+  if (!project.db[currentDbTab]) project.db[currentDbTab] = [];
+  project.db[currentDbTab].push({name, tags});
+  document.getElementById('dbNewName').value = '';
+  document.getElementById('dbNewTags').value = '';
+  renderDbContent();
+  notify('Added to library', 'success');
+}
+
+// ===================== STATS =====================
+function updateStats() {
+  document.getElementById('statTotal').textContent = project.images.length;
+  const captioned = project.images.filter(hasMeaningfulCaption).length;
+  document.getElementById('statCaptioned').textContent = captioned;
+  document.getElementById('statMissing').textContent = project.images.length - captioned;
+  document.getElementById('statDone').textContent = project.images.filter(i => i.done).length;
+}
+
+// ===================== UTILS =====================
+function escH(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escJ(s) { return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+function notify(msg, type='') {
+  const el = document.getElementById('notify');
+  el.textContent = msg;
+  el.className = 'notify show ' + type;
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+init();
+</script>
+</body>
+</html>
