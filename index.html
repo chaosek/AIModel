@@ -530,7 +530,7 @@
   <div class="col-preview" id="colPreview">
     <div id="previewPlaceholder" class="preview-placeholder">Select an image</div>
     <img id="previewImg" class="preview-img" style="display:none" alt="">
-    <div id="imgMeta" style="display:none;margin-top:6px;display:flex;flex-direction:column;gap:3px"></div>
+    <div id="imgMeta" style="margin-top:6px;display:flex;flex-direction:column;gap:3px"></div>
   </div>
 
   <div class="resizer" id="r3"></div>
@@ -947,6 +947,7 @@ function selectImage(id) {
 async function loadImgMeta(img) {
   const el = document.getElementById('imgMeta');
   if (!el) return;
+  el.innerHTML = '';
 
   try {
     const file = img.fileHandle ? await img.fileHandle.getFile() : null;
@@ -964,19 +965,18 @@ async function loadImgMeta(img) {
     const rows = [
       ['Format', ext],
       ['Size', sizeKB + sizeMB],
-      ['Resolution', dims ? `${dims.w} × ${dims.h}` : '—'],
+      ['Resolution', dims ? `${dims.w} × ${dims.h} px` : '—'],
       ['Aspect', dims ? (dims.w / dims.h).toFixed(2) : '—'],
       ['MP', dims ? ((dims.w * dims.h) / 1000000).toFixed(1) + ' MP' : '—'],
     ];
 
-    el.style.display = 'flex';
     el.innerHTML = rows.map(([label, val]) => `
       <div style="display:flex;gap:6px;align-items:baseline">
         <span style="font-size:9px;font-family:var(--font-mono);color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;width:68px;flex-shrink:0">${label}</span>
         <span style="font-size:11px;font-family:var(--font-mono);color:var(--text2)">${val}</span>
       </div>`).join('');
   } catch(e) {
-    el.style.display = 'none';
+    el.innerHTML = `<span style="font-size:10px;font-family:var(--font-mono);color:var(--text3)">—</span>`;
   }
 }
 
