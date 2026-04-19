@@ -423,6 +423,31 @@
   .modal .field-row { margin-bottom: 8px; }
 
   /* NOTIFY */
+  .ai-caption-box {
+    margin-top: 6px;
+    border-top: 1px solid var(--border);
+    padding-top: 6px;
+  }
+  .ai-caption-label {
+    font-size: 9px; font-family: var(--font-mono); color: var(--text3);
+    text-transform: uppercase; letter-spacing: 1px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 3px;
+  }
+  .ai-caption-text {
+    font-size: 10px; font-family: var(--font-mono); color: var(--text2);
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 3px; padding: 4px 6px; line-height: 1.5;
+    cursor: pointer; transition: border-color 0.15s;
+  }
+  .ai-caption-text:hover { border-color: var(--accent2); }
+  .ai-caption-copy {
+    font-size: 9px; color: var(--accent2); cursor: pointer;
+    font-family: var(--font-mono); border: none; background: none;
+    padding: 0; transition: opacity 0.15s;
+  }
+  .ai-caption-copy:hover { opacity: 0.7; }
+
   .notify {
     position: fixed; bottom: 16px; right: 16px;
     padding: 8px 16px; background: var(--surface2); border: 1px solid var(--border2);
@@ -622,6 +647,25 @@
       <div class="field-label">AI Review character description (for AI review prompt)</div>
       <textarea class="field-input" id="cfgAiDesc" rows="3" style="min-height:56px" placeholder="Describe your character for AI review context..."></textarea>
     </div>
+    <div class="field-row">
+      <div class="meta-label" style="margin-bottom:4px">Reference Images (included in every review ZIP)</div>
+    </div>
+    <div class="field-row" style="flex-direction:row;gap:8px">
+      <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+        <div class="field-label">Face reference</div>
+        <div id="refFacePreview" style="width:100%;aspect-ratio:1;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);cursor:pointer;overflow:hidden" onclick="document.getElementById('cfgRefFace').click()">
+          <span id="refFaceLabel">Click to upload</span>
+        </div>
+        <input type="file" id="cfgRefFace" accept="image/*" style="display:none" onchange="previewRef('face',this)">
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:4px">
+        <div class="field-label">Body reference</div>
+        <div id="refBodyPreview" style="width:100%;aspect-ratio:1;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);cursor:pointer;overflow:hidden" onclick="document.getElementById('cfgRefBody').click()">
+          <span id="refBodyLabel">Click to upload</span>
+        </div>
+        <input type="file" id="cfgRefBody" accept="image/*" style="display:none" onchange="previewRef('body',this)">
+      </div>
+    </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeSettingsModal()">Cancel</button>
       <button class="btn accent" onclick="saveSettings()">Save Settings</button>
@@ -655,6 +699,8 @@ let config = {
   body: '',
   quality: 'photorealistic, 8k, professional photography, sharp focus, high detail',
   aiDesc: 'A photorealistic AI-generated model character.',
+  refFace: null,  // base64 data URL
+  refBody: null,  // base64 data URL
 };
 
 // ===================== STATE =====================
@@ -722,6 +768,19 @@ function showSettingsModal() {
   document.getElementById('cfgBody').value = config.body;
   document.getElementById('cfgQuality').value = config.quality;
   document.getElementById('cfgAiDesc').value = config.aiDesc;
+  // Restore reference previews
+  ['face','body'].forEach(type => {
+    const src = type === 'face' ? config.refFace : config.refBody;
+    const preview = document.getElementById('refFacePreview'.replace('face', type === 'face' ? 'face' : 'body').replace('Face','Face').replace('Body','Body'));
+    const previewEl = document.getElementById(`ref${type.charAt(0).toUpperCase()+type.slice(1)}Preview`);
+    const labelEl = document.getElementById(`ref${type.charAt(0).toUpperCase()+type.slice(1)}Label`);
+    if (src) {
+      previewEl.style.backgroundImage = `url(${src})`;
+      previewEl.style.backgroundSize = 'cover';
+      previewEl.style.backgroundPosition = 'center';
+      if (labelEl) labelEl.style.display = 'none';
+    }
+  });
   document.getElementById('settingsModal').classList.add('open');
 }
 function closeSettingsModal() {
@@ -733,12 +792,30 @@ function saveSettings() {
   config.body = document.getElementById('cfgBody').value.trim();
   config.quality = document.getElementById('cfgQuality').value.trim();
   config.aiDesc = document.getElementById('cfgAiDesc').value.trim();
+  // refFace and refBody are saved directly by previewRef()
   try { localStorage.setItem('aiCaptionConfig', JSON.stringify(config)); } catch(e) {}
   updateProjectDisplay();
-  // Update bulk default textarea
   document.getElementById('bulkDefault').value = buildDefaultCaption();
   closeSettingsModal();
   notify('Settings saved ✓', 'success');
+}
+
+function previewRef(type, input) {
+  if (!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const src = e.target.result;
+    if (type === 'face') config.refFace = src;
+    else config.refBody = src;
+    const previewEl = document.getElementById(`ref${type.charAt(0).toUpperCase()+type.slice(1)}Preview`);
+    const labelEl = document.getElementById(`ref${type.charAt(0).toUpperCase()+type.slice(1)}Label`);
+    previewEl.style.backgroundImage = `url(${src})`;
+    previewEl.style.backgroundSize = 'cover';
+    previewEl.style.backgroundPosition = 'center';
+    if (labelEl) labelEl.style.display = 'none';
+    try { localStorage.setItem('aiCaptionConfig', JSON.stringify(config)); } catch(e) {}
+  };
+  reader.readAsDataURL(input.files[0]);
 }
 
 function buildDefaultCaption() {
@@ -1250,12 +1327,28 @@ async function exportReviewZip() {
     } catch(e) {}
   }
 
+  // Add reference images if set
+  const refs = {};
+  if (config.refFace) {
+    const faceB64 = config.refFace.split(',')[1];
+    const faceType = config.refFace.split(';')[0].split('/')[1] || 'jpeg';
+    zip.file(`_ref_face.${faceType}`, faceB64, {base64: true});
+    refs.face = `_ref_face.${faceType}`;
+  }
+  if (config.refBody) {
+    const bodyB64 = config.refBody.split(',')[1];
+    const bodyType = config.refBody.split(';')[0].split('/')[1] || 'jpeg';
+    zip.file(`_ref_body.${bodyType}`, bodyB64, {base64: true});
+    refs.body = `_ref_body.${bodyType}`;
+  }
+
   zip.file('_manifest.json', JSON.stringify({
     project: config.name,
     character: config.aiDesc,
+    references: refs,
     exportDate: new Date().toISOString(),
     totalImages: manifest.length,
-    instructions: `Evaluate each image for Flux LoRA training of AI model character: ${config.aiDesc}. Return reviews JSON.`,
+    instructions: `Evaluate each image for Flux LoRA training of AI model character: ${config.aiDesc}. Reference images are included as _ref_face and _ref_body — use them to judge identity consistency. Return reviews JSON.`,
     images: manifest
   }, null, 2));
 
@@ -1327,19 +1420,31 @@ async function runAiReview() {
       r.readAsDataURL(blob);
     });
 
-    const systemPrompt = `You are an expert AI image analyst specializing in evaluating training images for Flux LoRA models. You are evaluating images for this AI model character: ${config.aiDesc || 'an AI-generated model character'}.
+    const systemPrompt = `You are an expert AI image analyst and caption writer for Flux LoRA training. You are evaluating images for this AI model character: ${config.aiDesc || 'an AI-generated model character'}.
 
 Evaluate the image and respond ONLY with a JSON object, no markdown, no preamble:
-{"overall":<1-5>,"face":<1-5>,"body":<1-5>,"outfit":<1-5>,"technical":<1-5>,"training":"yes"|"no"|"maybe","notes":"<max 2 sentences on LoRA training suitability>"}
+{
+  "overall":<1-5>,
+  "face":<1-5>,
+  "body":<1-5>,
+  "outfit":<1-5>,
+  "technical":<1-5>,
+  "training":"yes"|"no"|"maybe",
+  "notes":"<max 2 sentences on LoRA training suitability>",
+  "caption_kohya":"<Flux LoRA training caption: trigger word first, then comma-separated tags describing exactly what you see: hair, eyes, outfit, pose, scene, lighting, shot type, quality tags. Max 30 tags, no sentences.>",
+  "caption_chatgpt":"<Natural language prompt for ChatGPT/DALL-E to recreate this image: describe the person, outfit, pose, scene and photography style in 2-3 flowing sentences.>"
+}
 
-Scoring: face=identity clarity/sharpness, body=figure visibility for training, outfit=clothing clarity, technical=sharpness/lighting/artifacts. training: yes=use, maybe=use with caution, no=skip.`;
+Scoring: face=identity clarity/sharpness, body=figure visibility, outfit=clothing clarity, technical=sharpness/lighting/artifacts. training: yes=use, maybe=use with caution, no=skip.
+For caption_kohya: start with the character trigger word if known (${config.name || 'character'}), describe only what is actually visible in the image.
+For caption_chatgpt: write as a generation prompt, be specific about materials, colors, environment and mood.`;
 
     const apiResp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 300,
+        max_tokens: 800,
         system: systemPrompt,
         messages: [{role:'user', content:[
           {type:'image', source:{type:'base64', media_type: blob.type||'image/jpeg', data: base64}},
@@ -1377,6 +1482,7 @@ function renderAiResult(r, el) {
   const trainClass = r.training==='yes' ? 'ai-train-yes' : r.training==='no' ? 'ai-train-no' : 'ai-train-maybe';
   const trainLabel = r.training==='yes' ? '✓ Use for training' : r.training==='no' ? '✗ Skip' : '~ Consider';
   const cats = [{label:'Face', val:r.face},{label:'Body', val:r.body},{label:'Outfit', val:r.outfit},{label:'Technical', val:r.technical}];
+  const uid = Date.now();
   el.innerHTML = `
     <div class="ai-review-box">
       <div class="ai-score-row">
@@ -1391,7 +1497,29 @@ function renderAiResult(r, el) {
         </div>`).join('')}
       </div>
       ${r.notes ? `<div class="ai-notes">${escH(r.notes)}</div>` : ''}
+      ${r.caption_kohya ? `
+        <div class="ai-caption-box">
+          <div class="ai-caption-label">
+            <span>Kohya / Flux</span>
+            <button class="ai-caption-copy" onclick="copyAiCaption('kohya_${uid}')">📋 copy</button>
+          </div>
+          <div class="ai-caption-text" id="kohya_${uid}" onclick="copyAiCaption('kohya_${uid}')">${escH(r.caption_kohya)}</div>
+        </div>` : ''}
+      ${r.caption_chatgpt ? `
+        <div class="ai-caption-box">
+          <div class="ai-caption-label">
+            <span>ChatGPT prompt</span>
+            <button class="ai-caption-copy" onclick="copyAiCaption('chatgpt_${uid}')">📋 copy</button>
+          </div>
+          <div class="ai-caption-text" id="chatgpt_${uid}" onclick="copyAiCaption('chatgpt_${uid}')">${escH(r.caption_chatgpt)}</div>
+        </div>` : ''}
     </div>`;
+}
+
+function copyAiCaption(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => notify('Copied!', 'success'));
 }
 
 function importLibraryJson() {
