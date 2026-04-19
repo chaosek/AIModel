@@ -319,27 +319,12 @@
   }
   .fields-area::-webkit-scrollbar { width: 4px; }
   .fields-area::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-  .field-group { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
-  .field-group-header {
-    display: flex; align-items: center; gap: 6px; padding: 4px 8px;
-    background: var(--surface2); border-bottom: 1px solid var(--border);
-    cursor: pointer; user-select: none;
-  }
-  .field-group-header:hover { background: var(--surface3); }
-  .group-icon { font-size: 12px; }
-  .group-name { font-family: var(--font-mono); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); }
-  .group-toggle { margin-left: auto; color: var(--text3); font-size: 9px; transition: transform 0.2s; }
-  .field-group.collapsed .group-toggle { transform: rotate(-90deg); }
-  .field-group-body { padding: 5px 7px; display: flex; flex-direction: column; gap: 4px; }
-  .field-group.collapsed .field-group-body { display: none; }
-  .field-row { display: flex; flex-direction: column; gap: 2px; }
-  .field-label { font-size: 9px; font-family: var(--font-mono); color: var(--text3); }
+  .fields-area > div { padding: 0 2px; }
   textarea.field-input, input.field-input {
     background: var(--surface2); border: 1px solid var(--border); color: var(--text);
     padding: 4px 7px; border-radius: 3px; font-family: var(--font-mono); font-size: 11px;
     resize: vertical; transition: border-color 0.15s; width: 100%;
   }
-  textarea.field-input { resize: vertical; }
   textarea.field-input:focus, input.field-input:focus { outline: none; border-color: var(--accent); }
 
   /* EXPORT PANEL */
@@ -1030,41 +1015,18 @@ const FIELD_DEFS = [
   { key:'quality',  icon:'✨', name:'Quality',   placeholder:'photorealistic, 8k, sharp focus...', rows:3 },
 ];
 
-const QUICK_TAGS = {
-  identity: [],
-  body: ['slender athletic figure','full bust','narrow waist','long legs','hourglass figure','toned abs','petite frame'],
-  pose: ['standing facing camera','walking mid-step','sitting edge of bed','crouching dynamic','kneeling on bed','lying down elegant','back view over shoulder','low angle power pose'],
-  outfit: ['black latex bodysuit','glossy latex leggings','black latex catsuit','form-fitting dress','elegant gown','sportswear','bikini'],
-  scene: ['white studio background','dark studio','night city bokeh','luxury interior','urban rooftop','beach sunset','industrial parking'],
-  lighting: ['natural daylight soft','cinematic warm key light','dramatic hard lighting','studio soft beauty light','golden hour outdoor','rim light silhouette'],
-  photo: ['full body shot','close-up portrait','half body waist up','85mm shallow depth of field','low angle leg elongation','extreme close-up centered'],
-  quality: ['photorealistic, ultra detailed','sharp focus','8k','luxury fashion editorial','no distortion, perfect anatomy','no text, no watermark'],
-};
-
 function renderFields(img) {
   const area = document.getElementById('fieldsArea');
   area.innerHTML = FIELD_DEFS.map(def => `
-    <div class="field-group" id="fg_${def.key}">
-      <div class="field-group-header" onclick="toggleGroup('${def.key}')">
-        <span class="group-icon">${def.icon}</span>
-        <span class="group-name">${def.name}</span>
-        <span class="group-toggle">▾</span>
-      </div>
-      <div class="field-group-body">
-        <textarea class="field-input" id="field_${def.key}" rows="${def.rows}" placeholder="${def.placeholder}"
-          oninput="onFieldChange('${def.key}')">${escH((img.caption[def.key]||'').trim())}</textarea>
-        ${(QUICK_TAGS[def.key]||[]).length ? `<div class="tag-grid">${(QUICK_TAGS[def.key]).map(t =>
-          `<span class="tag-chip" onclick="appendTag('${def.key}','${escJ(t)}')">${t}</span>`
-        ).join('')}</div>` : ''}
-      </div>
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="font-size:9px;font-family:var(--font-mono);color:var(--text3);text-transform:uppercase;letter-spacing:1px">${def.icon} ${def.name}</div>
+      <textarea class="field-input" id="field_${def.key}" rows="${def.rows}" placeholder="${def.placeholder}"
+        oninput="onFieldChange('${def.key}')">${escH((img.caption[def.key]||'').trim())}</textarea>
     </div>
   `).join('');
 }
 
-function toggleGroup(key) {
-  document.getElementById('fg_' + key).classList.toggle('collapsed');
-}
-
+// ===================== META =====================
 function onFieldChange(key) {
   if (!currentId) return;
   const img = project.images.find(i => i.id === currentId);
@@ -1074,14 +1036,6 @@ function onFieldChange(key) {
   updateStats();
 }
 
-function appendTag(key, tag) {
-  const el = document.getElementById('field_' + key);
-  if (!el) return;
-  el.value = el.value.trim() ? el.value.trim() + ', ' + tag : tag;
-  onFieldChange(key);
-}
-
-// ===================== META =====================
 function onMetaChange() {
   if (!currentId) return;
   const img = project.images.find(i => i.id === currentId);
