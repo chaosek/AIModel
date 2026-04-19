@@ -148,24 +148,26 @@
   }
   input[type=text].search:focus { outline: none; border-color: var(--accent); }
 
-  /* MAIN LAYOUT - 4 resizable columns */
+  /* MAIN LAYOUT - 5 resizable columns */
   .main {
     display: flex;
     flex: 1;
     overflow: hidden;
   }
 
-  .col-gallery, .col-detail, .col-prompts, .col-library {
+  .col-gallery, .col-actions, .col-preview, .col-prompts, .col-library {
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    flex-shrink: 0;
   }
-  .col-gallery  { width: 25%; min-width: 120px; border-right: none; }
-  .col-detail   { width: 25%; min-width: 150px; overflow-y: auto; padding: 8px; gap: 6px; }
-  .col-detail::-webkit-scrollbar { width: 3px; }
-  .col-detail::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
-  .col-prompts  { width: 25%; min-width: 200px; padding: 8px; gap: 6px; }
-  .col-library  { width: 25%; min-width: 150px; }
+  .col-gallery  { width: 20%; min-width: 100px; }
+  .col-actions  { width: 20%; min-width: 130px; overflow-y: auto; padding: 8px; gap: 6px; }
+  .col-actions::-webkit-scrollbar { width: 3px; }
+  .col-actions::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+  .col-preview  { width: 20%; min-width: 100px; padding: 8px; gap: 6px; }
+  .col-prompts  { width: 20%; min-width: 180px; padding: 8px; gap: 6px; }
+  .col-library  { width: 20%; min-width: 130px; }
 
   /* RESIZER */
   .resizer {
@@ -483,11 +485,8 @@
 
   <div class="resizer" id="r1"></div>
 
-  <!-- COL 2: Image detail + meta + actions -->
-  <div class="col-detail" id="colDetail">
-    <div id="previewPlaceholder" class="preview-placeholder">Select an image</div>
-    <img id="previewImg" class="preview-img" style="display:none" alt="">
-
+  <!-- COL 2: Actions + AI review -->
+  <div class="col-actions" id="colActions">
     <div class="meta-row"><div class="meta-label">File</div><div class="meta-value" id="metaFilename">—</div></div>
     <div class="meta-row">
       <div class="meta-label">Source</div>
@@ -527,7 +526,15 @@
 
   <div class="resizer" id="r2"></div>
 
-  <!-- COL 3: Prompts -->
+  <!-- COL 3: Preview image -->
+  <div class="col-preview" id="colPreview">
+    <div id="previewPlaceholder" class="preview-placeholder">Select an image</div>
+    <img id="previewImg" class="preview-img" style="display:none" alt="">
+  </div>
+
+  <div class="resizer" id="r3"></div>
+
+  <!-- COL 4: Prompts -->
   <div class="col-prompts" id="fieldsArea">
     <div class="empty-state">
       <div class="empty-icon">✏️</div>
@@ -535,9 +542,9 @@
     </div>
   </div>
 
-  <div class="resizer" id="r3"></div>
+  <div class="resizer" id="r4"></div>
 
-  <!-- COL 4: Library -->
+  <!-- COL 5: Library -->
   <div class="col-library" id="colLibrary">
     <div class="db-header" style="display:flex;align-items:center;justify-content:space-between">
       <span>📚 Library</span>
@@ -590,10 +597,7 @@
       <div class="field-label">AI Review character description (for AI review prompt)</div>
       <textarea class="field-input" id="cfgAiDesc" rows="3" style="min-height:56px" placeholder="Describe your character for AI review context..."></textarea>
     </div>
-    <div class="field-row">
-      <div class="meta-label" style="margin-bottom:4px">Reference Images (included in every review ZIP)</div>
-    </div>
-    <div class="field-row" style="flex-direction:row;gap:8px;align-items:flex-start">
+    <div style="display:flex;gap:8px;align-items:flex-start;margin-top:4px">
       <div style="flex:1;display:flex;flex-direction:column;gap:4px">
         <div class="field-label">Face reference</div>
         <div id="refFacePreview" style="width:100%;height:80px;background:var(--surface2);border:1px dashed var(--border2);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3);cursor:pointer;overflow:hidden;background-size:cover;background-position:center" onclick="document.getElementById('cfgRefFace').click()">
@@ -783,6 +787,7 @@ async function openProject() {
     await loadProjectFile();
     await scanImages();
     notify('Project loaded: ' + dirHandle.name, 'success');
+    loadColWidths();
   } catch(e) {
     if (e.name !== 'AbortError') notify('Error: ' + e.message, 'error');
   }
@@ -795,6 +800,7 @@ async function loadProjectFile() {
     const data = JSON.parse(await f.text());
     if (data.db) project.db = data.db;
     if (data.config) { config = {...config, ...data.config}; updateProjectDisplay(); }
+    if (data.colWidths) project._colWidths = data.colWidths;
     project._savedImages = {};
     if (data.images) data.images.forEach(img => project._savedImages[img.name] = img);
   } catch(e) { /* no project file yet */ }
@@ -1093,6 +1099,7 @@ async function saveProject() {
     const data = {
       version: 2,
       config,
+      colWidths: project._colWidths || null,
       saved: new Date().toISOString(),
       db: project.db,
       images: project.images.map(img => ({
@@ -1494,14 +1501,44 @@ function notify(msg, type='') {
 }
 
 // ===================== COLUMN RESIZE =====================
+const COL_IDS = ['colGallery','colActions','colPreview','fieldsArea','colLibrary'];
+const RESIZER_IDS = ['r1','r2','r3','r4'];
+
+function getColWidths() {
+  return COL_IDS.map(id => {
+    const el = document.getElementById(id);
+    return el ? el.getBoundingClientRect().width : null;
+  });
+}
+
+function applyColWidths(widths) {
+  COL_IDS.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (el && widths[i]) {
+      el.style.width = widths[i] + 'px';
+      el.style.flex = 'none';
+    }
+  });
+}
+
+function saveColWidths() {
+  const widths = getColWidths();
+  try { localStorage.setItem('aiColWidths', JSON.stringify(widths)); } catch(e) {}
+  // also store in project for saving with project file
+  project._colWidths = widths;
+}
+
+function loadColWidths() {
+  // Try project-saved widths first, then localStorage
+  const src = project._colWidths || (() => {
+    try { return JSON.parse(localStorage.getItem('aiColWidths')); } catch(e) { return null; }
+  })();
+  if (src && Array.isArray(src) && src.length === 5) applyColWidths(src);
+}
+
 function initResizers() {
-  const cols = [
-    document.getElementById('colGallery'),
-    document.getElementById('colDetail'),
-    document.getElementById('fieldsArea'),
-    document.getElementById('colLibrary'),
-  ];
-  const resizers = ['r1','r2','r3'].map(id => document.getElementById(id));
+  const cols = COL_IDS.map(id => document.getElementById(id));
+  const resizers = RESIZER_IDS.map(id => document.getElementById(id));
 
   resizers.forEach((resizer, idx) => {
     if (!resizer) return;
@@ -1520,8 +1557,10 @@ function initResizers() {
         const left = cols[idx];
         const right = cols[idx + 1];
         if (!left || !right) return;
-        const newLeft = Math.max(120, startWidths[idx] + dx);
-        const newRight = Math.max(120, startWidths[idx + 1] - dx);
+        const minL = parseInt(getComputedStyle(left).minWidth) || 100;
+        const minR = parseInt(getComputedStyle(right).minWidth) || 100;
+        const newLeft = Math.max(minL, startWidths[idx] + dx);
+        const newRight = Math.max(minR, startWidths[idx + 1] - dx);
         left.style.width = newLeft + 'px';
         right.style.width = newRight + 'px';
         left.style.flex = 'none';
@@ -1531,6 +1570,7 @@ function initResizers() {
         resizer.classList.remove('dragging');
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
+        saveColWidths();
         document.removeEventListener('mousemove', onMove);
         document.removeEventListener('mouseup', onUp);
       };
@@ -1538,6 +1578,9 @@ function initResizers() {
       document.addEventListener('mouseup', onUp);
     });
   });
+
+  // Load saved widths on init
+  loadColWidths();
 }
 
 init();
