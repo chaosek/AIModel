@@ -207,7 +207,7 @@
     background: var(--surface2);
     transition: border-color 0.15s;
   }
-  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb img { width: 100%; height: 100%; object-fit: contain; display: block; background: var(--surface2); }
   .thumb.selected { border-color: var(--accent); }
   .thumb.no-caption::after {
     content: '!';
@@ -929,7 +929,6 @@ function selectImage(id) {
   document.getElementById('trainNo').classList.toggle('active', !img.training);
 
   renderFields(img);
-  updateExport();
 
   const resultEl = document.getElementById('aiReviewResult');
   if (img.aiReview) renderAiResult(img.aiReview, resultEl);
@@ -1160,7 +1159,7 @@ function clearCaption() {
   const img = project.images.find(i => i.id === currentId);
   if (!img) return;
   img.caption = {prompt: ''};
-  renderFields(img); updateExport(); updateStats();
+  renderFields(img); updateStats();
 }
 
 // ===================== BULK NORMALIZE =====================
