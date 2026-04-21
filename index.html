@@ -187,9 +187,9 @@
     flex: 1;
     padding: 5px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    grid-auto-rows: auto;
-    gap: 4px;
+    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+    grid-auto-rows: 90px;
+    gap: 3px;
     align-content: start;
   }
   .gallery-scroll::-webkit-scrollbar { width: 8px; }
@@ -206,7 +206,7 @@
     background: var(--surface2);
     transition: border-color 0.15s;
   }
-  .thumb img { width: 100%; height: auto; display: block; }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .thumb.selected { border-color: var(--accent); }
   .thumb.no-caption::after {
     content: '!';
@@ -891,10 +891,12 @@ function parseCaption(raw) {
 }
 
 // ===================== GALLERY =====================
+let galleryImgs = [];
+
 function renderGallery() {
   const grid = document.getElementById('galleryGrid');
   const search = document.getElementById('searchInput').value.toLowerCase();
-  const imgs = project.images.filter(img => {
+  galleryImgs = project.images.filter(img => {
     if (search && !img.name.toLowerCase().includes(search)) return false;
     if (currentFilter === 'missing') return !hasMeaningfulCaption(img);
     if (currentFilter === 'done') return hasMeaningfulCaption(img);
@@ -907,18 +909,37 @@ function renderGallery() {
     return true;
   });
 
-  if (!imgs.length) {
+  if (!galleryImgs.length) {
     grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">🔍</div><span>No images found</span></div>`;
     return;
   }
-  grid.innerHTML = imgs.map(img => `
+
+  // Render placeholders first — fast
+  grid.innerHTML = galleryImgs.map(img => `
     <div class="thumb ${img.id===currentId?'selected':''} ${hasMeaningfulCaption(img)?'has-caption':'no-caption'} ${img.done?'is-done':''}"
          id="thumb_${CSS.escape(img.id)}" onclick="selectImage('${escJ(img.id)}')">
-      <img src="${img.src}" loading="lazy" alt="">
+      <img data-src="${img.src}" alt="" style="opacity:0;transition:opacity 0.2s">
       <div class="source-badge src-${img.source}">${srcLabel(img.source)}</div>
       <div class="thumb-name">${img.name}</div>
     </div>
   `).join('');
+
+  // Lazy load with IntersectionObserver
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const img = entry.target.querySelector('img[data-src]');
+        if (img) {
+          img.src = img.dataset.src;
+          img.removeAttribute('data-src');
+          img.onload = () => { img.style.opacity = '1'; };
+        }
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { root: grid, rootMargin: '200px' });
+
+  grid.querySelectorAll('.thumb').forEach(t => observer.observe(t));
 }
 
 function hasMeaningfulCaption(img) {
