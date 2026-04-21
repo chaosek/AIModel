@@ -188,7 +188,6 @@
     padding: 5px;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
-    grid-auto-rows: 90px;
     gap: 3px;
     align-content: start;
   }
@@ -198,6 +197,7 @@
   .gallery-scroll::-webkit-scrollbar-thumb:hover { background: var(--text3); }
 
   .thumb {
+    aspect-ratio: 2/3;
     border-radius: 3px;
     overflow: hidden;
     cursor: pointer;
@@ -206,7 +206,14 @@
     background: var(--surface2);
     transition: border-color 0.15s;
   }
-  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
   .thumb.selected { border-color: var(--accent); }
   .thumb.no-caption::after {
     content: '!';
