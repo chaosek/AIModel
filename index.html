@@ -602,6 +602,10 @@
       <div class="field-label">AI Review character description</div>
       <textarea class="field-input" id="cfgAiDesc" rows="3" style="min-height:56px" placeholder="Describe your character for AI review context..."></textarea>
     </div>
+    <div class="field-row">
+      <div class="field-label">ChatGPT Generation Prompt Template</div>
+      <textarea class="field-input" id="cfgChatgptTemplate" rows="6" style="min-height:100px;font-size:10px" placeholder="Default prompt template for ChatGPT image generation..."></textarea>
+    </div>
     <div style="display:flex;gap:8px;align-items:flex-start;margin-top:4px">
       <div style="flex:1;display:flex;flex-direction:column;gap:4px">
         <div class="field-label">Face reference</div>
@@ -651,8 +655,9 @@ let config = {
   body: '',
   quality: 'photorealistic, 8k, professional photography, sharp focus, high detail',
   aiDesc: 'A photorealistic AI-generated model character.',
-  refFace: null,  // base64 data URL
-  refBody: null,  // base64 data URL
+  chatgptTemplate: `maya01noir, identity locked, same face as reference, identical facial structure,\nexact same face as reference image, no variation,\nhigh facial consistency, fixed identity,\ngreen eyes, sharp jawline, defined cheekbones,\nsymmetrical face, same proportions,\nface priority, strong identity lock,\nlong dark brown hair in high ponytail,\ntight clean ponytail, smooth hairline,\nno loose strands, no curls, no waves,\nwearing black latex mini dress,\nhigh-gloss latex material, smooth reflective surface,\nfashion editorial styling, elegant silhouette,\nno explicit exposure,\nphotorealistic, ultra detailed,\nhigh resolution, sharp focus on face,\nperfect anatomy, no extra limbs, no missing limbs,\nno identity drift, no face variation`,
+  refFace: null,
+  refBody: null,
 };
 
 // ===================== STATE =====================
@@ -719,6 +724,7 @@ function showSettingsModal() {
   document.getElementById('cfgBody').value = config.body || '';
   document.getElementById('cfgQuality').value = config.quality || '';
   document.getElementById('cfgAiDesc').value = config.aiDesc;
+  document.getElementById('cfgChatgptTemplate').value = config.chatgptTemplate || '';
   ['face','body'].forEach(type => {
     const src = type === 'face' ? config.refFace : config.refBody;
     const previewEl = document.getElementById(`ref${type.charAt(0).toUpperCase()+type.slice(1)}Preview`);
@@ -741,6 +747,7 @@ function saveSettings() {
   config.body = document.getElementById('cfgBody').value.trim();
   config.quality = document.getElementById('cfgQuality').value.trim();
   config.aiDesc = document.getElementById('cfgAiDesc').value.trim();
+  config.chatgptTemplate = document.getElementById('cfgChatgptTemplate').value.trim();
   try { localStorage.setItem('aiCaptionConfig', JSON.stringify(config)); } catch(e) {}
   updateProjectDisplay();
   document.getElementById('bulkDefault').value = buildDefaultCaption();
@@ -995,7 +1002,7 @@ function renderFields(img) {
 
   const r = img.aiReview || {};
   const kohya = r.caption_kohya || '';
-  const chatgpt = r.caption_chatgpt || '';
+  const chatgpt = r.caption_chatgpt || config.chatgptTemplate || '';
   const uid = img.id.replace(/[^a-z0-9]/gi,'');
 
   area.innerHTML = `
