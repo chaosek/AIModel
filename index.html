@@ -949,7 +949,7 @@ function parseCaption(raw) {
 }
 
 // ===================== GALLERY =====================
-let galleryImgs = [];
+let thumbSrcMap = new Map();
 
 function renderGallery() {
   const grid = document.getElementById('galleryGrid');
@@ -972,32 +972,34 @@ function renderGallery() {
     return;
   }
 
-  // Render placeholders first — fast
+  // Store srcs in Map, use id as key
+  thumbSrcMap.clear();
+  galleryImgs.forEach(img => thumbSrcMap.set(img.id, img.src));
+
   grid.innerHTML = galleryImgs.map(img => `
     <div class="thumb ${img.id===currentId?'selected':''} ${hasMeaningfulCaption(img)?'has-caption':'no-caption'} ${img.done?'is-done':''}"
          id="thumb_${CSS.escape(img.id)}" onclick="selectImage('${escJ(img.id)}')"
-         data-src="${img.src}">
+         data-id="${escH(img.id)}">
       <div class="source-badge src-${img.source}">${srcLabel(img.source)}</div>
       <div class="thumb-name">${img.name}</div>
     </div>
   `).join('');
 
-  // Lazy load with IntersectionObserver — set background-image
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         const el = entry.target;
-        const src = el.dataset.src;
-        if (src) {
+        const id = el.dataset.id;
+        const src = thumbSrcMap.get(id);
+        if (src && !el.style.backgroundImage) {
           el.style.backgroundImage = `url("${src}")`;
-          el.removeAttribute('data-src');
         }
         observer.unobserve(el);
       }
     });
   }, { root: grid, rootMargin: '300px' });
 
-  grid.querySelectorAll('.thumb[data-src]').forEach(t => observer.observe(t));
+  grid.querySelectorAll('.thumb[data-id]').forEach(t => observer.observe(t));
 }
 
 function hasMeaningfulCaption(img) {
