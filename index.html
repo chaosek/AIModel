@@ -203,17 +203,10 @@
     cursor: pointer;
     border: 2px solid transparent;
     position: relative;
-    background: var(--surface2);
+    background: var(--surface2) center/cover no-repeat;
     transition: border-color 0.15s;
   }
-  .thumb img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-  }
+  .thumb img { display: none; }
   .thumb.selected { border-color: var(--accent); }
   .thumb.no-caption::after {
     content: '!';
@@ -982,29 +975,29 @@ function renderGallery() {
   // Render placeholders first — fast
   grid.innerHTML = galleryImgs.map(img => `
     <div class="thumb ${img.id===currentId?'selected':''} ${hasMeaningfulCaption(img)?'has-caption':'no-caption'} ${img.done?'is-done':''}"
-         id="thumb_${CSS.escape(img.id)}" onclick="selectImage('${escJ(img.id)}')">
-      <img data-src="${img.src}" alt="" style="opacity:0;transition:opacity 0.2s">
+         id="thumb_${CSS.escape(img.id)}" onclick="selectImage('${escJ(img.id)}')"
+         data-src="${img.src}">
       <div class="source-badge src-${img.source}">${srcLabel(img.source)}</div>
       <div class="thumb-name">${img.name}</div>
     </div>
   `).join('');
 
-  // Lazy load with IntersectionObserver
+  // Lazy load with IntersectionObserver — set background-image
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
-        const img = entry.target.querySelector('img[data-src]');
-        if (img) {
-          img.src = img.dataset.src;
-          img.removeAttribute('data-src');
-          img.onload = () => { img.style.opacity = '1'; };
+        const el = entry.target;
+        const src = el.dataset.src;
+        if (src) {
+          el.style.backgroundImage = `url("${src}")`;
+          el.removeAttribute('data-src');
         }
-        observer.unobserve(entry.target);
+        observer.unobserve(el);
       }
     });
-  }, { root: grid, rootMargin: '200px' });
+  }, { root: grid, rootMargin: '300px' });
 
-  grid.querySelectorAll('.thumb').forEach(t => observer.observe(t));
+  grid.querySelectorAll('.thumb[data-src]').forEach(t => observer.observe(t));
 }
 
 function hasMeaningfulCaption(img) {
