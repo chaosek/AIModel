@@ -167,7 +167,7 @@
   .col-actions::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
   .col-preview  { width: 20%; min-width: 100px; padding: 8px; gap: 6px; overflow: hidden; display: flex; flex-direction: column; }
   .col-prompts  { width: 20%; min-width: 180px; padding: 8px; gap: 6px; }
-  .col-library  { width: 20%; min-width: 130px; }
+  .col-library  { width: 20%; min-width: 130px; display: flex; flex-direction: column; overflow: hidden; }
 
   /* RESIZER */
   .resizer {
@@ -472,6 +472,7 @@
   <button class="btn purple" onclick="exportReviewZip()">📦 Export ZIP for Review</button>
   <button class="btn purple" onclick="importReviewJson()">📥 Import Reviews JSON</button>
   <button class="btn accent" onclick="runBatchReview()">🤖 Batch AI Review</button>
+  <button class="btn" onclick="resetColWidths()" title="Reset column widths" style="font-size:10px">⊞ Cols</button>
 
   <div class="filter-group">
     <input type="text" class="search" id="searchInput" placeholder="Search..." oninput="renderGallery()">
@@ -575,6 +576,7 @@
       <div class="db-tab" data-dbtab="lighting" onclick="switchDbTab('lighting',this)">Light</div>
       <div class="db-tab" data-dbtab="photo" onclick="switchDbTab('photo',this)">Photo</div>
       <div class="db-tab" data-dbtab="quality" onclick="switchDbTab('quality',this)">Quality</div>
+          <div class="db-tab" data-dbtab="prompts" onclick="switchDbTab('prompts',this)">Prompts</div>
     </div>
     <div class="db-content" id="dbContent"></div>
     <div class="db-add-form">
@@ -623,8 +625,9 @@
       <textarea class="field-input" id="cfgAiDesc" rows="3" style="min-height:56px" placeholder="Describe your character for AI review context..."></textarea>
     </div>
     <div class="field-row">
-      <div class="field-label">ChatGPT Generation Prompt Template</div>
-      <textarea class="field-input" id="cfgChatgptTemplate" rows="6" style="min-height:100px;font-size:10px" placeholder="Default prompt template for ChatGPT image generation..."></textarea>
+      <div class="field-label">ChatGPT Prompt Templates</div>
+      <div id="cfgPromptList" style="display:flex;flex-direction:column;gap:4px;margin-bottom:4px"></div>
+      <button class="btn" style="width:100%;font-size:11px" onclick="addPromptTemplate()">＋ Add New Template</button>
     </div>
     <div style="display:flex;gap:8px;align-items:flex-start;margin-top:4px">
       <div style="flex:1;display:flex;flex-direction:column;gap:4px">
@@ -676,6 +679,38 @@ let config = {
   quality: 'photorealistic, 8k, professional photography, sharp focus, high detail',
   aiDesc: 'A photorealistic AI-generated model character.',
   chatgptTemplate: `maya01noir, identity locked, same face as reference, identical facial structure,\nexact same face as reference image, no variation,\nhigh facial consistency, fixed identity,\ngreen eyes, sharp jawline, defined cheekbones,\nsymmetrical face, same proportions,\nface priority, strong identity lock,\nlong dark brown hair in high ponytail,\ntight clean ponytail, smooth hairline,\nno loose strands, no curls, no waves,\nwearing black latex mini dress,\nhigh-gloss latex material, smooth reflective surface,\nfashion editorial styling, elegant silhouette,\nno explicit exposure,\nphotorealistic, ultra detailed,\nhigh resolution, sharp focus on face,\nperfect anatomy, no extra limbs, no missing limbs,\nno identity drift, no face variation`,
+  promptTemplates: [
+    { name: 'v1 — Basic identity lock', text: `maya01noir, identity locked, same face as reference, identical facial structure,\nexact same face as reference image, no variation,\nhigh facial consistency, fixed identity,\ngreen eyes, sharp jawline, defined cheekbones,\nsymmetrical face, same proportions,\nface priority, strong identity lock,\nlong dark brown hair in high ponytail,\ntight clean ponytail, smooth hairline,\nno loose strands, no curls, no waves,\nwearing black latex mini dress,\nhigh-gloss latex material, smooth reflective surface,\nfashion editorial styling, elegant silhouette,\nno explicit exposure,\nphotorealistic, ultra detailed,\nhigh resolution, sharp focus on face,\nperfect anatomy, no extra limbs, no missing limbs,\nno identity drift, no face variation` },
+    { name: 'v2 — Lying on bed, cinematic lighting', text: `maya01noir, identity locked, same face as reference, identical facial structure,\nhigh facial consistency, fixed identity,\ngreen eyes, sharp jawline, defined cheekbones,\nsymmetrical face, face priority,\nhorizontal composition, 16:9,\nthree-quarter full body shot,\nwoman lying on a luxury hotel bed,\nbody angled diagonally across frame,\nupper body slightly raised, supported on one arm,\nlegs extended naturally, one leg slightly bent,\nnatural anatomy, correct proportions,\nboth feet fully visible,\nheels fully visible, not cropped,\nhead turned toward camera,\ndirect eye contact,\ncalm confident editorial expression,\nlong dark brown hair in high ponytail,\nclean, polished styling,\nwearing black latex mini dress,\nhigh-gloss latex material,\nstrong clean reflections,\nsharp specular highlights,\nmirror-like finish,\nstudio-quality material rendering,\nprofessional fashion lighting:\nwarm ambient lamp light,\nsoft studio key light,\ncontrolled rim light for separation,\nbalanced contrast,\nskin natural and clean,\nsoft cinematic highlights (subtle, not exaggerated),\nluxury hotel bed,\nclean neutral bedding,\nminimal wrinkles,\nshallow depth of field,\n85mm lens look,\nphotorealistic,\neditorial fashion photography,\nluxury campaign style,\nultra detailed,\nsharp focus on face,\nperfect anatomy,\nno distortion,\nno identity drift` },
+    { name: 'v3 — Overhead cinematic', text: `maya01noir, identity locked, same face as reference, identical facial structure, symmetrical face, green eyes, sharp jawline,
+face priority, ultra consistent identity, no variation,
+high-end fashion editorial, luxury hotel bedroom, warm moody cinematic lighting,
+woman lying on a bed on her back, head resting on pillow,
+hair spread softly across pillow, long dark brown hair in high ponytail,
+camera positioned directly above the pillow area, angled downward along the body,
+top-down perspective with slight diagonal angle, medium-tight framing,
+face, shoulders and upper torso visible, natural proportions,
+looking upward toward camera, calm confident expression,
+relaxed facial muscles, precise symmetry,
+green eyes with sharp iris detail, long eyelashes,
+clean eyebrows, symmetrical face,
+natural lips with soft gloss,
+wearing black glossy fitted fashion top, deep elegant neckline,
+structured smooth material, clean reflections, high-end styling,
+no jacket, no outerwear,
+fashion editorial look, non-explicit,
+arms relaxed near body, partially visible,
+clean fingers, natural anatomy, no deformation,
+clean smooth bedsheet, dark neutral color, no patterns,
+warm cinematic lighting, bedside lamp glow,
+soft shadows, golden highlights on skin,
+soft beauty lighting on face, catchlights in eyes,
+photorealistic, ultra detailed, sharp focus on eyes,
+85mm lens, shallow depth of field,
+no distortion, no asymmetry, no identity drift,
+no extra limbs, no artifacts, no text, no watermark` },
+    { name: 'v4 — Kneeling symmetrical', text: `maya01noir, identity locked, same face as reference, identical facial structure, symmetrical face, green eyes, sharp jawline,\nface priority, ultra consistent identity, no variation,\nhigh-end fashion editorial, luxury hotel bedroom, symmetrical composition,\nwarm cinematic lighting, bedside lamps on both sides,\nwoman kneeling on a bed, upright posture, sitting on her heels,\ncentered composition, natural balanced pose, elegant body alignment,\ncamera positioned in front of the bed at eye level,\nstraight-on perspective, medium framing,\nface, upper body and thighs visible,\nlooking directly at camera, calm confident expression,\ngreen eyes with sharp iris detail, long eyelashes,\nprecise eyebrows, symmetrical face,\nnatural lips with soft gloss,\nlong dark brown hair in high ponytail,\nwearing black glossy fitted fashion dress, elegant neckline,\nstructured material, smooth reflections, high-end styling,\nno jacket, no outerwear,\nhands resting naturally on thighs,\nclean fingers, natural anatomy,\nclean bed, dark neutral bedding, luxury hotel interior,\nwarm cinematic lighting, soft shadows,\ngolden highlights, soft beauty lighting on face,\ncatchlights in eyes,\nphotorealistic, ultra detailed, sharp focus on face,\n85mm lens, shallow depth of field,\nno distortion, no asymmetry, no identity drift,\nno artifacts, no extra limbs` }
+  ],
   apiKey: '',
   aiModel: 'haiku',
   refFace: null,
@@ -711,7 +746,8 @@ let project = {
       {name:"Beach", tags:"beach, ocean background, sunset"},
       {name:"Luxury interior", tags:"luxury interior, modern apartment, soft lighting"},
       {name:"Industrial", tags:"industrial setting, warehouse, concrete walls"},
-    ]
+    ],
+    prompts: []
   }
 };
 
@@ -722,15 +758,17 @@ let dirHandle = null;
 
 // ===================== INIT =====================
 function init() {
-  // Check API support
   if (!window.showDirectoryPicker) {
     document.getElementById('unsupportedBanner').style.display = 'block';
   }
-  // Load config from localStorage
   try {
     const saved = localStorage.getItem('aiCaptionConfig');
     if (saved) config = {...config, ...JSON.parse(saved)};
   } catch(e) {}
+  // Migrate promptTemplates from config to project.db.prompts if present
+  if (config.promptTemplates && config.promptTemplates.length && !project.db.prompts.length) {
+    project.db.prompts = config.promptTemplates.map(pt => ({name: pt.name, tags: pt.text}));
+  }
   updateProjectDisplay();
   renderDbContent();
 }
@@ -740,6 +778,39 @@ function updateProjectDisplay() {
 }
 
 // ===================== SETTINGS =====================
+function renderPromptTemplates() {
+  const list = document.getElementById('cfgPromptList');
+  if (!list) return;
+  list.innerHTML = (config.promptTemplates || []).map((pt, i) => `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:6px;display:flex;flex-direction:column;gap:4px">
+      <div style="display:flex;gap:4px;align-items:center">
+        <input class="field-input" style="flex:1;padding:3px 6px;font-size:11px" value="${escH(pt.name)}" onchange="config.promptTemplates[${i}].name=this.value" placeholder="Template name">
+        <button onclick="copyPromptTemplate(${i})" style="padding:2px 8px;font-size:10px;background:none;border:1px solid var(--border2);color:var(--accent2);border-radius:3px;cursor:pointer;font-family:var(--font-mono)">📋</button>
+        <button onclick="removePromptTemplate(${i})" style="padding:2px 8px;font-size:10px;background:none;border:1px solid var(--red);color:var(--red);border-radius:3px;cursor:pointer;font-family:var(--font-mono)">✕</button>
+      </div>
+      <textarea class="field-input" rows="3" style="font-size:10px;resize:vertical" onchange="config.promptTemplates[${i}].text=this.value">${escH(pt.text)}</textarea>
+    </div>
+  `).join('');
+}
+
+function addPromptTemplate() {
+  if (!config.promptTemplates) config.promptTemplates = [];
+  config.promptTemplates.push({ name: `v${config.promptTemplates.length + 1} — New template`, text: '' });
+  renderPromptTemplates();
+}
+
+function removePromptTemplate(i) {
+  if (!confirm('Remove this template?')) return;
+  config.promptTemplates.splice(i, 1);
+  renderPromptTemplates();
+}
+
+function copyPromptTemplate(i) {
+  const pt = (config.promptTemplates || [])[i];
+  if (!pt) return;
+  navigator.clipboard.writeText(pt.text).then(() => notify('Copied: ' + pt.name, 'success'));
+}
+
 function showSettingsModal() {
   document.getElementById('cfgApiKey').value = config.apiKey || localStorage.getItem('anthropicApiKey') || '';
   document.getElementById('cfgAiModel').value = config.aiModel || 'haiku';
@@ -748,7 +819,7 @@ function showSettingsModal() {
   document.getElementById('cfgBody').value = config.body || '';
   document.getElementById('cfgQuality').value = config.quality || '';
   document.getElementById('cfgAiDesc').value = config.aiDesc;
-  document.getElementById('cfgChatgptTemplate').value = config.chatgptTemplate || '';
+  renderPromptTemplates();
   ['face','body'].forEach(type => {
     const src = type === 'face' ? config.refFace : config.refBody;
     const previewEl = document.getElementById(`ref${type.charAt(0).toUpperCase()+type.slice(1)}Preview`);
@@ -774,7 +845,7 @@ function saveSettings() {
   config.body = document.getElementById('cfgBody').value.trim();
   config.quality = document.getElementById('cfgQuality').value.trim();
   config.aiDesc = document.getElementById('cfgAiDesc').value.trim();
-  config.chatgptTemplate = document.getElementById('cfgChatgptTemplate').value.trim();
+  // promptTemplates are edited in-place via onchange handlers
   try { localStorage.setItem('aiCaptionConfig', JSON.stringify(config)); } catch(e) {}
   updateProjectDisplay();
   document.getElementById('bulkDefault').value = buildDefaultCaption();
@@ -1050,7 +1121,7 @@ function renderFields(img) {
 
   const r = img.aiReview || {};
   const kohya = r.caption_kohya || '';
-  const chatgpt = r.caption_chatgpt || config.chatgptTemplate || '';
+  const chatgpt = r.caption_chatgpt || (config.promptTemplates && config.promptTemplates[0] && config.promptTemplates[0].text) || config.chatgptTemplate || '';
   const uid = img.id.replace(/[^a-z0-9]/gi,'');
 
   area.innerHTML = `
@@ -1068,7 +1139,10 @@ function renderFields(img) {
       <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-height:0">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span style="font-size:9px;font-family:var(--font-mono);color:var(--accent2);text-transform:uppercase;letter-spacing:1px">💬 ChatGPT Prompt</span>
-          <button class="caption-copy-btn" onclick="copyText('${uid}_chatgpt')">📋 copy</button>
+          <div style="display:flex;gap:6px;align-items:center">
+            <button class="caption-copy-btn" onclick="copyText('${uid}_chatgpt')">📋 copy</button>
+            <button class="caption-copy-btn" onclick="convertToFlux('${uid}_chatgpt','${uid}_kohya')" title="Convert to Flux tags via AI">⚡ → Flux</button>
+          </div>
         </div>
         <textarea id="${uid}_chatgpt" class="field-input" style="flex:1;resize:none;font-size:10px;min-height:60px"
           oninput="onAiCaptionEdit('chatgpt','${uid}_chatgpt')">${escH(chatgpt)}</textarea>
@@ -1488,6 +1562,54 @@ async function runAiReview() {
   }
 }
 
+async function convertToFlux(chatgptElId, kohyaElId) {
+  const apiKey = getApiKey();
+  if (!apiKey) { notify('Set API key in Settings first', 'error'); return; }
+
+  const chatgptEl = document.getElementById(chatgptElId);
+  const kohyaEl = document.getElementById(kohyaElId);
+  if (!chatgptEl || !kohyaEl) return;
+
+  const inputText = chatgptEl.value.trim();
+  if (!inputText) { notify('ChatGPT prompt is empty', 'error'); return; }
+
+  const btn = event.target;
+  btn.textContent = '⟳';
+  btn.disabled = true;
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        messages: [{role:'user', content:`Convert this ChatGPT image generation prompt into Flux/Stable Diffusion style comma-separated tags. Keep maya01noir as first tag. Extract all visual descriptors: hair, eyes, makeup, outfit details (material/color/style), pose, scene, lighting, shot type. Add: photorealistic, ultra detailed, sharp focus, 8k. Remove all sentences, instructions, meta-comments. Output ONLY the comma-separated tags, nothing else.\n\nPrompt:\n${inputText}`}]
+      })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    const tags = data.content?.find(b => b.type==='text')?.text?.trim() || '';
+    if (tags) {
+      kohyaEl.value = tags;
+      // Save to aiReview if exists
+      const img = project.images.find(i => i.id === currentId);
+      if (img) {
+        if (!img.aiReview) img.aiReview = {};
+        img.aiReview.caption_kohya = tags;
+        markUnsaved();
+      }
+      notify('Converted to Flux tags ✓', 'success');
+    }
+  } catch(e) {
+    notify('Error: ' + e.message, 'error');
+  } finally {
+    btn.textContent = '⚡ → Flux';
+    btn.disabled = false;
+  }
+}
+
+
 async function callAiReview(img, apiKey) {
   const resized = await resizeImageForReview(img.src, 800);
   const base64 = resized.split(',')[1];
@@ -1703,11 +1825,38 @@ function switchDbTab(tab, el) {
   currentDbTab = tab;
   document.querySelectorAll('.db-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
+  // Update add form placeholders
+  const nameInput = document.getElementById('dbNewName');
+  const tagsInput = document.getElementById('dbNewTags');
+  if (tab === 'prompts') {
+    nameInput.placeholder = 'Prompt name (e.g. v5 — Standing)';
+    tagsInput.placeholder = 'Full prompt text...';
+  } else {
+    nameInput.placeholder = 'Name';
+    tagsInput.placeholder = 'Tags (comma separated)';
+  }
   renderDbContent();
 }
 function renderDbContent() {
   const items = project.db[currentDbTab] || [];
-  document.getElementById('dbContent').innerHTML = !items.length
+  const el = document.getElementById('dbContent');
+
+  if (currentDbTab === 'prompts') {
+    el.innerHTML = !items.length
+      ? `<div style="color:var(--text3);font-size:11px;padding:8px;font-family:var(--font-mono)">No prompts saved</div>`
+      : items.map((item, i) => `
+        <div class="db-item" style="display:flex;flex-direction:column;gap:3px">
+          <div style="display:flex;align-items:center;gap:4px">
+            <div class="db-item-name" style="flex:1;cursor:default">${escH(item.name)}</div>
+            <button onclick="copyDbPrompt(${i})" style="padding:1px 6px;font-size:9px;background:none;border:1px solid var(--border2);color:var(--accent2);border-radius:3px;cursor:pointer;font-family:var(--font-mono);flex-shrink:0">📋</button>
+            <button onclick="deleteDbPrompt(${i})" style="padding:1px 6px;font-size:9px;background:none;border:1px solid var(--red);color:var(--red);border-radius:3px;cursor:pointer;font-family:var(--font-mono);flex-shrink:0">✕</button>
+          </div>
+          <div class="db-item-tags" style="white-space:normal;line-height:1.4;max-height:48px;overflow:hidden">${escH((item.tags||'').substring(0,120))}${item.tags && item.tags.length>120?'…':''}</div>
+        </div>`).join('');
+    return;
+  }
+
+  el.innerHTML = !items.length
     ? `<div style="color:var(--text3);font-size:11px;padding:8px;font-family:var(--font-mono)">Empty</div>`
     : items.map((item, i) => `
       <div class="db-item" onclick="applyDbItem(${i})">
@@ -1725,6 +1874,19 @@ function applyDbItem(idx) {
   onPromptChange();
   notify('Added: ' + item.name, 'success');
 }
+function copyDbPrompt(i) {
+  const item = (project.db.prompts || [])[i];
+  if (!item) return;
+  navigator.clipboard.writeText(item.tags).then(() => notify('Copied: ' + item.name, 'success'));
+}
+
+function deleteDbPrompt(i) {
+  if (!confirm('Delete this prompt?')) return;
+  project.db.prompts.splice(i, 1);
+  markUnsaved();
+  renderDbContent();
+}
+
 function addDbItem() {
   const name = document.getElementById('dbNewName').value.trim();
   const tags = document.getElementById('dbNewTags').value.trim();
@@ -1733,6 +1895,7 @@ function addDbItem() {
   project.db[currentDbTab].push({name, tags});
   document.getElementById('dbNewName').value = '';
   document.getElementById('dbNewTags').value = '';
+  markUnsaved();
   renderDbContent();
   notify('Added to library', 'success');
 }
@@ -1770,6 +1933,16 @@ window.addEventListener('beforeunload', e => {
   }
 });
 
+function resetColWidths() {
+  COL_IDS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.style.width = '20%'; el.style.flex = ''; }
+  });
+  project._colWidths = null;
+  try { localStorage.removeItem('aiColWidths'); } catch(e) {}
+  notify('Column widths reset', 'success');
+}
+
 // ===================== COLUMN RESIZE =====================
 const COL_IDS = ['colGallery','colActions','colPreview','fieldsArea','colLibrary'];
 const RESIZER_IDS = ['r1','r2','r3','r4'];
@@ -1782,10 +1955,12 @@ function getColWidths() {
 }
 
 function applyColWidths(widths) {
+  const mins = [100, 130, 100, 180, 130];
   COL_IDS.forEach((id, i) => {
     const el = document.getElementById(id);
     if (el && widths[i]) {
-      el.style.width = widths[i] + 'px';
+      const w = Math.max(widths[i], mins[i] || 100);
+      el.style.width = w + 'px';
       el.style.flex = 'none';
     }
   });
