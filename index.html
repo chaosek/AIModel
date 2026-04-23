@@ -985,21 +985,11 @@ function renderGallery() {
     </div>
   `).join('');
 
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const el = entry.target;
-        const id = el.dataset.id;
-        const src = thumbSrcMap.get(id);
-        if (src && !el.style.backgroundImage) {
-          el.style.backgroundImage = `url("${src}")`;
-        }
-        observer.unobserve(el);
-      }
-    });
-  }, { root: grid, rootMargin: '300px' });
-
-  grid.querySelectorAll('.thumb[data-id]').forEach(t => observer.observe(t));
+  // Blob URLs are already in memory — set backgrounds immediately
+  grid.querySelectorAll('.thumb[data-id]').forEach(el => {
+    const src = thumbSrcMap.get(el.dataset.id);
+    if (src) el.style.backgroundImage = `url("${src}")`;
+  });
 }
 
 function hasMeaningfulCaption(img) {
