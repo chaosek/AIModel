@@ -80,6 +80,18 @@
   }
   .stats span b { color: var(--text2); }
 
+  /* TOOLBAR */
+  .toolbar {
+    display: flex;
+    gap: 6px;
+    padding: 7px 16px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
   /* MAIN TAB NAVIGATION */
   .main-nav {
     display: flex;
@@ -109,16 +121,6 @@
   .section-panel { display: none; flex: 1; overflow: hidden; flex-direction: column; min-height: 0; }
   .section-panel.active { display: flex; }
 
-
-    display: flex;
-    gap: 6px;
-    padding: 7px 16px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    flex-shrink: 0;
-    flex-wrap: wrap;
-    align-items: center;
-  }
   .btn {
     padding: 5px 11px;
     border: 1px solid var(--border2);
@@ -488,8 +490,8 @@
 </header>
 
 <nav class="main-nav">
-  <div class="main-nav-tab active" onclick="switchMainTab('library',this)">📚 Prompt Library</div>
-  <div class="main-nav-tab" onclick="switchMainTab('review',this)">🖼 Review</div>
+  <div class="main-nav-tab" onclick="switchMainTab('library',this)">📚 Prompt Library</div>
+  <div class="main-nav-tab active" onclick="switchMainTab('review',this)">🖼 Review</div>
   <div class="main-nav-tab" onclick="switchMainTab('dataset',this)">🎯 Dataset Builder</div>
 </nav>
 
