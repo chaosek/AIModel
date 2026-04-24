@@ -560,6 +560,7 @@
     <button class="filter-btn" onclick="setFilter('zonner',this)">Zonner</button>
     <button class="filter-btn" onclick="setFilter('copilot',this)">Copilot</button>
     <button class="filter-btn" onclick="setFilter('comfyui',this)">ComfyUI</button>
+    <button class="filter-btn" onclick="setFilter('indataset',this)" style="border-color:var(--blue);color:var(--blue)">📁 Dataset</button>
   </div>
 </div>
 
@@ -1096,6 +1097,7 @@ function renderGallery() {
     if (currentFilter === 'zonner') return img.source === 'zonner';
     if (currentFilter === 'copilot') return img.source === 'copilot';
     if (currentFilter === 'comfyui') return img.source === 'comfyui';
+    if (currentFilter === 'indataset') return !!img.inDataset;
     return true;
   });
 
@@ -2318,15 +2320,40 @@ function updateDatasetGrid() {
   }
   grid.innerHTML = imgs.map(img => `
     <div class="dataset-thumb" data-id="${escH(img.id)}"
-         title="${escH(img.name)} — click to remove"
-         onclick="removeFromDataset('${escJ(img.id)}')">
-      <div class="dataset-thumb-del">✕</div>
+         title="${escH(img.name)}"
+         onclick="showDatasetImgInfo('${escJ(img.id)}')">
+      <div class="dataset-thumb-del" onclick="event.stopPropagation();removeFromDataset('${escJ(img.id)}')">✕</div>
     </div>`).join('');
-  // Set backgrounds via JS
   grid.querySelectorAll('.dataset-thumb').forEach(el => {
     const img = imgs.find(i => i.id === el.dataset.id);
     if (img) el.style.backgroundImage = `url("${img.src}")`;
   });
+}
+
+function showDatasetImgInfo(imgId) {
+  const img = project.images.find(i => i.id === imgId);
+  if (!img) return;
+  const r = img.aiReview || {};
+  const el = document.getElementById('datasetAnalysis');
+  el.innerHTML = `
+    <div style="display:flex;gap:12px;margin-bottom:10px">
+      <img src="${img.src}" style="width:120px;object-fit:contain;border-radius:4px;border:1px solid var(--border);background:var(--surface2)">
+      <div style="flex:1;display:flex;flex-direction:column;gap:5px;font-family:var(--font-mono);font-size:11px">
+        <div style="color:var(--text);font-weight:500;font-size:12px">${escH(img.name)}</div>
+        <div style="color:var(--text3)">Source: <span style="color:var(--text2)">${img.source}</span></div>
+        <div style="color:var(--text3)">Rating: <span style="color:var(--accent)">${'★'.repeat(img.rating||0)}</span></div>
+        <div style="color:var(--text3)">Training: <span style="color:${img.training?'var(--green)':'var(--red)'}">${img.training?'Yes':'No'}</span></div>
+        ${r.overall ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">
+          ${['face','body','outfit','technical'].map(k=>`<span style="color:var(--text3)">${k}: <b style="color:var(--accent2)">${r[k]||'—'}</b></span>`).join('')}
+        </div>` : ''}
+        ${r.notes ? `<div style="color:var(--text2);font-size:10px;line-height:1.5;margin-top:4px">${escH(r.notes)}</div>` : ''}
+        <button onclick="removeFromDataset('${escJ(img.id)}')" style="margin-top:4px;padding:3px 10px;background:none;border:1px solid var(--red);color:var(--red);border-radius:3px;cursor:pointer;font-family:var(--font-mono);font-size:10px;width:fit-content">✕ Remove from dataset</button>
+      </div>
+    </div>
+    ${r.caption_kohya ? `<div style="margin-top:6px">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">⚙ Kohya Caption</div>
+      <div style="font-size:10px;color:var(--text2);line-height:1.6;background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:6px">${escH(r.caption_kohya)}</div>
+    </div>` : ''}`;
 }
 
 function updateDatasetStats() {
@@ -2357,13 +2384,16 @@ function addToDataset(imgId) {
 }
 
 function removeFromDataset(imgId) {
-  if (!confirm('Remove from dataset?')) return;
   const img = project.images.find(i => i.id === imgId);
   if (!img) return;
   img.inDataset = false;
   markUnsaved();
   updateDatasetGrid();
   updateDatasetStats();
+  // Clear info panel
+  const el = document.getElementById('datasetAnalysis');
+  if (el) el.innerHTML = `Click <b style="color:var(--accent2)">🤖 Analyze</b> to get AI recommendations for your LoRA training dataset.`;
+  notify('Removed from dataset', 'success');
 }
 
 async function analyzeDataset() {
