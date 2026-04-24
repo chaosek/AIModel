@@ -369,7 +369,23 @@
   .ai-spinning { animation: spin 1s linear infinite; display: inline-block; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* DATABASE */
+  .dataset-thumb {
+    border-radius: 3px; overflow: hidden; position: relative;
+    background: var(--surface2) center/cover no-repeat;
+    cursor: pointer; border: 1px solid var(--border);
+    aspect-ratio: 2/3;
+  }
+  .dataset-thumb:hover { border-color: var(--red); }
+  .dataset-thumb-del {
+    position: absolute; top: 2px; right: 2px;
+    background: rgba(212,95,95,0.85); color: #fff;
+    border-radius: 50%; width: 16px; height: 16px;
+    font-size: 9px; line-height: 16px; text-align: center;
+    display: none;
+  }
+  .dataset-thumb:hover .dataset-thumb-del { display: block; }
+
+
   .db-header {
     padding: 6px 10px; background: var(--surface2); border-bottom: 1px solid var(--border);
     font-family: var(--font-mono); font-size: 11px; color: var(--text2);
@@ -2248,13 +2264,15 @@ function updateDatasetGrid() {
     return;
   }
   grid.innerHTML = imgs.map(img => `
-    <div style="border-radius:3px;overflow:hidden;position:relative;background:var(--surface2) center/cover no-repeat;cursor:pointer;border:1px solid var(--border)"
-         style="background-image:url('${img.src}')"
+    <div class="dataset-thumb" data-id="${escH(img.id)}"
+         title="${escH(img.name)} — click to remove"
          onclick="removeFromDataset('${escJ(img.id)}')">
+      <div class="dataset-thumb-del">✕</div>
     </div>`).join('');
-  // Set backgrounds
-  grid.querySelectorAll('div[style*="center/cover"]').forEach((el, i) => {
-    if (imgs[i]) el.style.backgroundImage = `url("${imgs[i].src}")`;
+  // Set backgrounds via JS
+  grid.querySelectorAll('.dataset-thumb').forEach(el => {
+    const img = imgs.find(i => i.id === el.dataset.id);
+    if (img) el.style.backgroundImage = `url("${img.src}")`;
   });
 }
 
@@ -2286,6 +2304,7 @@ function addToDataset(imgId) {
 }
 
 function removeFromDataset(imgId) {
+  if (!confirm('Remove from dataset?')) return;
   const img = project.images.find(i => i.id === imgId);
   if (!img) return;
   img.inDataset = false;
