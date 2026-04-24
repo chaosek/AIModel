@@ -80,8 +80,36 @@
   }
   .stats span b { color: var(--text2); }
 
-  /* TOOLBAR */
-  .toolbar {
+  /* MAIN TAB NAVIGATION */
+  .main-nav {
+    display: flex;
+    gap: 0;
+    background: var(--surface);
+    border-bottom: 2px solid var(--border);
+    flex-shrink: 0;
+    padding: 0 16px;
+  }
+  .main-nav-tab {
+    padding: 10px 20px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .main-nav-tab:hover { color: var(--text2); }
+  .main-nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* SECTION PANELS */
+  .section-panel { display: none; flex: 1; overflow: hidden; flex-direction: column; min-height: 0; }
+  .section-panel.active { display: flex; }
+
+
     display: flex;
     gap: 6px;
     padding: 7px 16px;
@@ -153,6 +181,7 @@
     display: flex;
     flex: 1;
     overflow: hidden;
+    min-height: 0;
   }
 
   .col-gallery, .col-actions, .col-preview, .col-prompts, .col-library {
@@ -458,6 +487,40 @@
   </div>
 </header>
 
+<nav class="main-nav">
+  <div class="main-nav-tab active" onclick="switchMainTab('library',this)">📚 Prompt Library</div>
+  <div class="main-nav-tab" onclick="switchMainTab('review',this)">🖼 Review</div>
+  <div class="main-nav-tab" onclick="switchMainTab('dataset',this)">🎯 Dataset Builder</div>
+</nav>
+
+<!-- ===================== SECTION: PROMPT LIBRARY ===================== -->
+<div class="section-panel" id="sectionLibrary">
+  <div class="toolbar">
+    <button class="btn accent" onclick="openProject()">📂 Open Project</button>
+    <button class="btn" onclick="saveProject()">💾 Save Project</button>
+    <button class="btn purple" onclick="importPromptsFromFile()">📥 Import Prompts</button>
+    <button class="btn green" onclick="addNewPrompt()">＋ New Prompt</button>
+  </div>
+  <div style="display:flex;flex:1;overflow:hidden">
+    <!-- Categories sidebar -->
+    <div id="libCatPanel" style="width:160px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+      <div style="padding:8px 10px;font-family:var(--font-mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border)">Categories</div>
+      <div id="libCatList" style="flex:1;overflow-y:auto;padding:4px"></div>
+      <div style="padding:6px;border-top:1px solid var(--border)">
+        <button class="btn" style="width:100%;font-size:10px" onclick="addPromptCategory()">＋ Category</button>
+      </div>
+    </div>
+    <!-- Prompt list -->
+    <div id="libPromptList" style="width:260px;flex-shrink:0;border-right:1px solid var(--border);overflow-y:auto;padding:5px"></div>
+    <!-- Prompt editor -->
+    <div id="libPromptEditor" style="flex:1;display:flex;flex-direction:column;overflow:hidden;padding:16px;gap:10px">
+      <div style="color:var(--text3);font-family:var(--font-mono);font-size:12px;text-align:center;margin-top:40px">Select a prompt to edit</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SECTION: REVIEW ===================== -->
+<div class="section-panel active" id="sectionReview">
 <div class="toolbar">
   <button class="btn accent" onclick="openProject()">📂 Open Project Folder</button>
   <button class="btn" onclick="saveProject()">💾 Save Project</button>
@@ -530,6 +593,7 @@
       <button class="btn" onclick="saveTxt()">💾 Save .txt</button>
       <button class="btn purple" id="aiBtnMain" onclick="runAiReview()">🤖 AI Review</button>
       <button class="btn green" id="doneBtn" onclick="markDone()">✓ Mark Processed</button>
+      <button class="btn" id="datasetBtn" onclick="toggleDataset()" style="border-color:var(--blue);color:var(--blue)">＋ Dataset</button>
       <button class="btn danger" onclick="clearCaption()">✕ Clear</button>
     </div>
     <div id="aiReviewResult" style="margin-top:4px"></div>
@@ -580,6 +644,42 @@
     </div>
   </div>
 
+</div><!-- end mainCols -->
+</div><!-- end sectionReview -->
+
+<!-- ===================== SECTION: DATASET BUILDER ===================== -->
+<div class="section-panel" id="sectionDataset">
+  <div class="toolbar">
+    <button class="btn accent" onclick="openProject()">📂 Open Project</button>
+    <button class="btn" onclick="saveProject()">💾 Save Project</button>
+    <button class="btn green" onclick="exportDatasetFolder()">📁 Export Dataset</button>
+    <button class="btn purple" onclick="analyzeDataset()">🤖 Analyze</button>
+    <button class="btn purple" onclick="generateChatGPTPrompts()">✨ Generate Prompts</button>
+  </div>
+  <div style="display:flex;flex:1;overflow:hidden">
+    <!-- Selected images -->
+    <div style="width:280px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden">
+      <div style="padding:8px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+        <span style="font-family:var(--font-mono);font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px">Dataset</span>
+        <span id="datasetCount" style="font-family:var(--font-mono);font-size:10px;color:var(--accent)">0 images</span>
+      </div>
+      <div id="datasetGrid" style="flex:1;overflow-y:auto;padding:5px;display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));grid-auto-rows:80px;gap:3px;align-content:start">
+        <div style="grid-column:1/-1;color:var(--text3);font-size:11px;font-family:var(--font-mono);padding:8px">Mark images as dataset in Review tab</div>
+      </div>
+    </div>
+    <!-- AI panel -->
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+      <div id="datasetStats" style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;font-family:var(--font-mono);font-size:10px;color:var(--text3)">
+        <span>Open project to begin</span>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px">
+        <div id="datasetAnalysis" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:14px;font-family:var(--font-mono);font-size:11px;color:var(--text3);min-height:120px;white-space:pre-wrap;line-height:1.6">
+Click <b style="color:var(--accent2)">🤖 Analyze</b> to get AI recommendations for your LoRA training dataset.
+        </div>
+        <div id="generatedPrompts" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- SETTINGS MODAL -->
@@ -703,7 +803,42 @@ photorealistic, ultra detailed, sharp focus on eyes,
 85mm lens, shallow depth of field,
 no distortion, no asymmetry, no identity drift,
 no extra limbs, no artifacts, no text, no watermark` },
-    { name: 'v4 — Kneeling symmetrical', text: `maya01noir, identity locked, same face as reference, identical facial structure, symmetrical face, green eyes, sharp jawline,\nface priority, ultra consistent identity, no variation,\nhigh-end fashion editorial, luxury hotel bedroom, symmetrical composition,\nwarm cinematic lighting, bedside lamps on both sides,\nwoman kneeling on a bed, upright posture, sitting on her heels,\ncentered composition, natural balanced pose, elegant body alignment,\ncamera positioned in front of the bed at eye level,\nstraight-on perspective, medium framing,\nface, upper body and thighs visible,\nlooking directly at camera, calm confident expression,\ngreen eyes with sharp iris detail, long eyelashes,\nprecise eyebrows, symmetrical face,\nnatural lips with soft gloss,\nlong dark brown hair in high ponytail,\nwearing black glossy fitted fashion dress, elegant neckline,\nstructured material, smooth reflections, high-end styling,\nno jacket, no outerwear,\nhands resting naturally on thighs,\nclean fingers, natural anatomy,\nclean bed, dark neutral bedding, luxury hotel interior,\nwarm cinematic lighting, soft shadows,\ngolden highlights, soft beauty lighting on face,\ncatchlights in eyes,\nphotorealistic, ultra detailed, sharp focus on face,\n85mm lens, shallow depth of field,\nno distortion, no asymmetry, no identity drift,\nno artifacts, no extra limbs` }
+    { name: 'v4 — Kneeling symmetrical', text: `maya01noir, identity locked, same face as reference, identical facial structure, symmetrical face, green eyes, sharp jawline,\nface priority, ultra consistent identity, no variation,\nhigh-end fashion editorial, luxury hotel bedroom, symmetrical composition,\nwarm cinematic lighting, bedside lamps on both sides,\nwoman kneeling on a bed, upright posture, sitting on her heels,\ncentered composition, natural balanced pose, elegant body alignment,\ncamera positioned in front of the bed at eye level,\nstraight-on perspective, medium framing,\nface, upper body and thighs visible,\nlooking directly at camera, calm confident expression,\ngreen eyes with sharp iris detail, long eyelashes,\nprecise eyebrows, symmetrical face,\nnatural lips with soft gloss,\nlong dark brown hair in high ponytail,\nwearing black glossy fitted fashion dress, elegant neckline,\nstructured material, smooth reflections, high-end styling,\nno jacket, no outerwear,\nhands resting naturally on thighs,\nclean fingers, natural anatomy,\nclean bed, dark neutral bedding, luxury hotel interior,\nwarm cinematic lighting, soft shadows,\ngolden highlights, soft beauty lighting on face,\ncatchlights in eyes,\nphotorealistic, ultra detailed, sharp focus on face,\n85mm lens, shallow depth of field,\nno distortion, no asymmetry, no identity drift,\nno artifacts, no extra limbs` },
+    { name: 'v5 — Kneeling close-up', text: `maya01noir, identity locked, same face as reference, identical facial structure, symmetrical face, green eyes, sharp jawline,
+face priority, ultra consistent identity, no variation,
+high-end fashion editorial, luxury hotel bedroom,
+warm cinematic lighting, soft ambient glow,
+woman kneeling on a bed, centered composition,
+upright posture, hands resting on the bed beside her,
+tight framing from upper torso to head,
+cropped just below bust line,
+face clearly dominant in frame,
+balanced editorial composition,
+strong direct eye contact,
+intense, confident editorial expression,
+long dark brown hair in high ponytail, clean and structured,
+wearing black fitted mini dress,
+ultra-smooth high-gloss latex material,
+perfectly clean surface, no wrinkles, no folds,
+mirror-like reflections, liquid shine,
+tight seamless fit, sculpted silhouette,
+clean white bedding,
+smooth white duvet, no patterns, minimal texture,
+dark upholstered headboard behind,
+symmetrical bedside lamps with warm glow,
+warm cinematic lighting, soft shadows,
+golden highlights on face and upper chest,
+soft beauty lighting on face, catchlights in eyes,
+skin with natural finish,
+subtle healthy glow, controlled highlights,
+matte-to-satin texture, no wet effect,
+photorealistic, ultra detailed,
+sharp focus on eyes,
+85mm lens, shallow depth of field,
+natural proportions, balanced anatomy,
+no distortion, no asymmetry, no identity drift,
+no artifacts, no extra limbs, no text, no watermark` },
+    { name: 'v5 — Kneeling close-up', text: `maya01noir, identity locked, same face as reference, identical facial structure, symmetrical face, green eyes, sharp jawline,\nface priority, ultra consistent identity, no variation,\nhigh-end fashion editorial, luxury hotel bedroom,\nwarm cinematic lighting, soft ambient glow,\nwoman kneeling on a bed, centered composition,\nupright posture, hands resting on the bed beside her,\ntight framing from upper torso to head,\ncropped just below bust line,\nface clearly dominant in frame,\nbalanced editorial composition,\nstrong direct eye contact,\nintense, confident editorial expression,\nlong dark brown hair in high ponytail, clean and structured,\nwearing black fitted mini dress,\nultra-smooth high-gloss latex material,\nperfectly clean surface, no wrinkles, no folds,\nmirror-like reflections, liquid shine,\ntight seamless fit, sculpted silhouette,\nclean white bedding,\nsmooth white duvet, no patterns, minimal texture,\ndark upholstered headboard behind,\nsymmetrical bedside lamps with warm glow,\nwarm cinematic lighting, soft shadows,\ngolden highlights on face and upper chest,\nsoft beauty lighting on face, catchlights in eyes,\nskin with natural finish,\nsubtle healthy glow, controlled highlights,\nmatte-to-satin texture, no wet effect,\nphotorealistic, ultra detailed,\nsharp focus on eyes,\n85mm lens, shallow depth of field,\nnatural proportions, balanced anatomy,\nno distortion, no asymmetry, no identity drift,\nno artifacts, no extra limbs, no text, no watermark` }
   ],
   apiKey: '',
   aiModel: 'haiku',
@@ -765,6 +900,7 @@ function init() {
   }
   updateProjectDisplay();
   renderDbContent();
+  initPromptLibrary();
 }
 
 function updateProjectDisplay() {
@@ -887,6 +1023,7 @@ async function loadProjectFile() {
     const f = await fh.getFile();
     const data = JSON.parse(await f.text());
     if (data.db) project.db = data.db;
+    if (data.promptLibrary) promptLibrary = data.promptLibrary;
     if (data.config) { config = {...config, ...data.config}; updateProjectDisplay(); }
     if (data.colWidths) project._colWidths = data.colWidths;
     project._savedImages = {};
@@ -1244,6 +1381,7 @@ async function saveProject() {
       version: 2,
       config,
       colWidths: project._colWidths || null,
+      promptLibrary,
       saved: new Date().toISOString(),
       db: project.db,
       images: project.images.map(img => ({
@@ -1906,6 +2044,20 @@ window.addEventListener('beforeunload', e => {
   }
 });
 
+function toggleDataset() {
+  if (!currentId) return;
+  const img = project.images.find(i => i.id === currentId);
+  if (!img) return;
+  img.inDataset = !img.inDataset;
+  const btn = document.getElementById('datasetBtn');
+  if (btn) {
+    btn.textContent = img.inDataset ? '✓ In Dataset' : '＋ Dataset';
+    btn.style.background = img.inDataset ? 'rgba(95,143,173,0.15)' : '';
+  }
+  markUnsaved();
+  notify(img.inDataset ? 'Added to dataset' : 'Removed from dataset', 'success');
+}
+
 function resetColWidths() {
   COL_IDS.forEach(id => {
     const el = document.getElementById(id);
@@ -1916,7 +2068,407 @@ function resetColWidths() {
   notify('Column widths reset', 'success');
 }
 
-// ===================== COLUMN RESIZE =====================
+// ===================== MAIN TAB NAVIGATION =====================
+let currentMainTab = 'review';
+
+function switchMainTab(tab, el) {
+  currentMainTab = tab;
+  document.querySelectorAll('.main-nav-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('section' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+  if (tab === 'library') renderLibrarySection();
+  if (tab === 'dataset') renderDatasetSection();
+}
+
+// ===================== PROMPT LIBRARY =====================
+let promptLibrary = {
+  categories: ['Identity', 'Pose', 'Outfit', 'Scene', 'Lighting', 'Camera', 'Full Prompt'],
+  prompts: []
+};
+let currentLibCat = 'Full Prompt';
+let currentLibPromptIdx = null;
+
+function initPromptLibrary() {
+  // Migrate v1-v5 from config.promptTemplates
+  if (config.promptTemplates && config.promptTemplates.length) {
+    config.promptTemplates.forEach(pt => {
+      if (!promptLibrary.prompts.find(p => p.name === pt.name)) {
+        promptLibrary.prompts.push({name: pt.name, category: 'Full Prompt', text: pt.text, tags: []});
+      }
+    });
+  }
+  // Migrate from project.db.prompts
+  if (project.db.prompts && project.db.prompts.length) {
+    project.db.prompts.forEach(pt => {
+      if (!promptLibrary.prompts.find(p => p.name === pt.name)) {
+        promptLibrary.prompts.push({name: pt.name, category: 'Full Prompt', text: pt.tags, tags: []});
+      }
+    });
+  }
+}
+
+function renderLibrarySection() {
+  initPromptLibrary();
+  renderLibCategories();
+  renderLibPromptList();
+}
+
+function renderLibCategories() {
+  const el = document.getElementById('libCatList');
+  if (!el) return;
+  el.innerHTML = ['All', ...promptLibrary.categories].map(cat => `
+    <div onclick="selectLibCat('${escJ(cat)}')" style="padding:6px 10px;border-radius:3px;cursor:pointer;font-family:var(--font-mono);font-size:11px;
+      color:${currentLibCat===cat?'var(--accent)':'var(--text2)'};
+      background:${currentLibCat===cat?'rgba(200,169,110,0.1)':'transparent'};
+      border-left:2px solid ${currentLibCat===cat?'var(--accent)':'transparent'};
+      transition:all 0.15s">
+      ${escH(cat)}
+      <span style="color:var(--text3);font-size:10px;margin-left:4px">${cat==='All'?promptLibrary.prompts.length:promptLibrary.prompts.filter(p=>p.category===cat).length}</span>
+    </div>`).join('');
+}
+
+function selectLibCat(cat) {
+  currentLibCat = cat;
+  currentLibPromptIdx = null;
+  renderLibCategories();
+  renderLibPromptList();
+  document.getElementById('libPromptEditor').innerHTML = '<div style="color:var(--text3);font-family:var(--font-mono);font-size:12px;text-align:center;margin-top:40px">Select a prompt to edit</div>';
+}
+
+function renderLibPromptList() {
+  const el = document.getElementById('libPromptList');
+  if (!el) return;
+  const filtered = currentLibCat === 'All'
+    ? promptLibrary.prompts
+    : promptLibrary.prompts.filter(p => p.category === currentLibCat);
+
+  el.innerHTML = !filtered.length
+    ? `<div style="color:var(--text3);font-size:11px;font-family:var(--font-mono);padding:12px">No prompts in this category</div>`
+    : filtered.map((p, i) => {
+        const realIdx = promptLibrary.prompts.indexOf(p);
+        return `<div onclick="selectLibPrompt(${realIdx})" style="padding:8px 10px;border-radius:4px;cursor:pointer;margin-bottom:3px;border:1px solid ${currentLibPromptIdx===realIdx?'var(--accent)':'var(--border)'};background:${currentLibPromptIdx===realIdx?'rgba(200,169,110,0.08)':'var(--surface2)'};transition:all 0.15s">
+          <div style="font-family:var(--font-mono);font-size:11px;color:${currentLibPromptIdx===realIdx?'var(--accent)':'var(--text)'};font-weight:500">${escH(p.name)}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${escH(p.category)}</div>
+        </div>`;
+      }).join('');
+}
+
+function selectLibPrompt(idx) {
+  currentLibPromptIdx = idx;
+  renderLibPromptList();
+  renderLibEditor(idx);
+}
+
+function renderLibEditor(idx) {
+  const el = document.getElementById('libPromptEditor');
+  const p = promptLibrary.prompts[idx];
+  if (!p || !el) return;
+  el.innerHTML = `
+    <div style="display:flex;gap:8px;align-items:center;flex-shrink:0">
+      <input class="field-input" id="libEditName" value="${escH(p.name)}" style="flex:1;font-size:13px" placeholder="Prompt name">
+      <select class="meta-select" id="libEditCat" style="width:140px">
+        ${promptLibrary.categories.map(c=>`<option value="${escH(c)}" ${p.category===c?'selected':''}>${escH(c)}</option>`).join('')}
+      </select>
+    </div>
+    <textarea class="field-input" id="libEditText" style="flex:1;resize:none;font-size:11px;min-height:200px;font-family:var(--font-mono)">${escH(p.text)}</textarea>
+    <div style="display:flex;gap:8px;flex-shrink:0">
+      <button class="btn accent" onclick="saveLibPrompt(${idx})">💾 Save</button>
+      <button class="btn" onclick="copyLibPrompt(${idx})">📋 Copy</button>
+      <button class="btn danger" onclick="deleteLibPrompt(${idx})">🗑 Delete</button>
+    </div>`;
+}
+
+function saveLibPrompt(idx) {
+  const p = promptLibrary.prompts[idx];
+  if (!p) return;
+  p.name = document.getElementById('libEditName').value.trim() || p.name;
+  p.category = document.getElementById('libEditCat').value;
+  p.text = document.getElementById('libEditText').value.trim();
+  renderLibCategories();
+  renderLibPromptList();
+  markUnsaved();
+  notify('Prompt saved ✓', 'success');
+}
+
+function copyLibPrompt(idx) {
+  const p = promptLibrary.prompts[idx];
+  if (!p) return;
+  navigator.clipboard.writeText(p.text).then(() => notify('Copied: ' + p.name, 'success'));
+}
+
+function deleteLibPrompt(idx) {
+  if (!confirm('Delete this prompt?')) return;
+  promptLibrary.prompts.splice(idx, 1);
+  currentLibPromptIdx = null;
+  renderLibCategories();
+  renderLibPromptList();
+  document.getElementById('libPromptEditor').innerHTML = '<div style="color:var(--text3);font-family:var(--font-mono);font-size:12px;text-align:center;margin-top:40px">Select a prompt to edit</div>';
+  markUnsaved();
+}
+
+function addNewPrompt() {
+  promptLibrary.prompts.push({name: 'New Prompt', category: currentLibCat === 'All' ? 'Full Prompt' : currentLibCat, text: '', tags: []});
+  const idx = promptLibrary.prompts.length - 1;
+  renderLibCategories();
+  renderLibPromptList();
+  selectLibPrompt(idx);
+}
+
+function addPromptCategory() {
+  const name = prompt('Category name:');
+  if (!name || !name.trim()) return;
+  promptLibrary.categories.push(name.trim());
+  renderLibCategories();
+}
+
+async function importPromptsFromFile() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.txt,.json';
+  input.multiple = true;
+  input.onchange = async () => {
+    let added = 0;
+    for (const file of Array.from(input.files)) {
+      const text = await file.text();
+      const name = file.name.replace(/\.[^.]+$/, '');
+      if (!promptLibrary.prompts.find(p => p.name === name)) {
+        promptLibrary.prompts.push({name, category: 'Full Prompt', text: text.trim(), tags: []});
+        added++;
+      }
+    }
+    renderLibCategories();
+    renderLibPromptList();
+    markUnsaved();
+    notify(`Imported ${added} prompt(s)`, 'success');
+  };
+  input.click();
+}
+
+// ===================== DATASET BUILDER =====================
+let dataset = []; // array of image ids selected for dataset
+
+function renderDatasetSection() {
+  updateDatasetGrid();
+  updateDatasetStats();
+}
+
+function updateDatasetGrid() {
+  const grid = document.getElementById('datasetGrid');
+  const countEl = document.getElementById('datasetCount');
+  if (!grid) return;
+  const imgs = project.images.filter(img => img.inDataset);
+  if (countEl) countEl.textContent = imgs.length + ' images';
+  if (!imgs.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;color:var(--text3);font-size:11px;font-family:var(--font-mono);padding:8px">Mark images as dataset in Review tab</div>';
+    return;
+  }
+  grid.innerHTML = imgs.map(img => `
+    <div style="border-radius:3px;overflow:hidden;position:relative;background:var(--surface2) center/cover no-repeat;cursor:pointer;border:1px solid var(--border)"
+         style="background-image:url('${img.src}')"
+         onclick="removeFromDataset('${escJ(img.id)}')">
+    </div>`).join('');
+  // Set backgrounds
+  grid.querySelectorAll('div[style*="center/cover"]').forEach((el, i) => {
+    if (imgs[i]) el.style.backgroundImage = `url("${imgs[i].src}")`;
+  });
+}
+
+function updateDatasetStats() {
+  const el = document.getElementById('datasetStats');
+  if (!el) return;
+  const imgs = project.images.filter(img => img.inDataset);
+  if (!imgs.length) { el.innerHTML = '<span style="font-family:var(--font-mono);font-size:10px;color:var(--text3)">No images in dataset yet</span>'; return; }
+
+  const poses = new Set(imgs.map(img => img.aiReview?.caption_kohya?.match(/(?:standing|sitting|kneeling|lying|crouching|walking)/i)?.[0]).filter(Boolean));
+  const outfits = new Set(imgs.map(img => img.aiReview?.caption_kohya?.match(/(?:latex|dress|bodysuit|leggings|sportswear)/i)?.[0]).filter(Boolean));
+  const sources = imgs.reduce((acc, img) => { acc[img.source] = (acc[img.source]||0)+1; return acc; }, {});
+
+  el.innerHTML = [
+    `<span><b style="color:var(--accent)">${imgs.length}</b> images</span>`,
+    `<span><b style="color:var(--accent2)">${poses.size}</b> poses</span>`,
+    `<span><b style="color:var(--green)">${outfits.size}</b> outfits</span>`,
+    ...Object.entries(sources).map(([k,v]) => `<span style="color:var(--text3)">${k}: ${v}</span>`)
+  ].map(s => `<div style="font-family:var(--font-mono);font-size:11px">${s}</div>`).join('');
+}
+
+function addToDataset(imgId) {
+  const img = project.images.find(i => i.id === imgId);
+  if (!img) return;
+  img.inDataset = true;
+  markUnsaved();
+  if (currentMainTab === 'dataset') updateDatasetGrid();
+  notify('Added to dataset', 'success');
+}
+
+function removeFromDataset(imgId) {
+  const img = project.images.find(i => i.id === imgId);
+  if (!img) return;
+  img.inDataset = false;
+  markUnsaved();
+  updateDatasetGrid();
+  updateDatasetStats();
+}
+
+async function analyzeDataset() {
+  const apiKey = getApiKey();
+  if (!apiKey) { notify('Set API key in Settings first', 'error'); return; }
+  const imgs = project.images.filter(img => img.inDataset);
+  if (!imgs.length) { notify('No images in dataset', 'error'); return; }
+
+  const el = document.getElementById('datasetAnalysis');
+  el.innerHTML = '<span class="ai-spinning">⟳</span> Analyzing dataset...';
+
+  // Send only metadata, no images — cheap!
+  const metadata = imgs.map(img => ({
+    name: img.name,
+    source: img.source,
+    rating: img.rating,
+    training: img.training,
+    face: img.aiReview?.face,
+    body: img.aiReview?.body,
+    outfit: img.aiReview?.outfit,
+    notes: img.aiReview?.notes,
+    kohya: img.aiReview?.caption_kohya?.substring(0, 200)
+  }));
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1500,
+        messages: [{role:'user', content: `You are a Flux LoRA training expert analyzing a dataset for AI model character "maya01noir" (dark brown hair, green eyes, smokey eye makeup, hourglass figure, black latex outfits).
+
+Dataset metadata (${imgs.length} images):
+${JSON.stringify(metadata, null, 2)}
+
+Analyze this dataset and provide:
+1. STRENGTHS: What's well covered
+2. GAPS: What's missing (poses, outfits, scenes, shot types, lighting)
+3. RECOMMENDATIONS: Exactly how many and what type of images to add (be specific: "3x full body standing, outdoor daylight, different outfits")
+4. PRIORITY: Top 3 most important additions
+
+Be specific and actionable. Format clearly with sections.`}]
+      })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.content?.find(b => b.type==='text')?.text || '';
+    el.innerHTML = `<div style="white-space:pre-wrap;line-height:1.7;color:var(--text2)">${escH(text)}</div>`;
+  } catch(e) {
+    el.innerHTML = `<span style="color:var(--red)">Error: ${escH(e.message)}</span>`;
+  }
+}
+
+async function generateChatGPTPrompts() {
+  const apiKey = getApiKey();
+  if (!apiKey) { notify('Set API key in Settings first', 'error'); return; }
+  const imgs = project.images.filter(img => img.inDataset);
+  const analysisText = document.getElementById('datasetAnalysis').innerText;
+
+  const el = document.getElementById('generatedPrompts');
+  el.innerHTML = '<div style="font-family:var(--font-mono);font-size:11px;color:var(--text3)"><span class="ai-spinning">⟳</span> Generating prompts...</div>';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2000,
+        messages: [{role:'user', content: `You are an expert at creating ChatGPT image generation prompts for AI model "maya01noir" that bypass content restrictions through professional photography framing.
+
+Current dataset has ${imgs.length} images.
+Analysis: ${analysisText.substring(0, 500)}
+
+Generate 5 specific ChatGPT prompts for the most important missing images. Each prompt should:
+- Start with identity lock keywords (maya01noir, identity locked, same face as reference...)
+- Use professional photography/fashion editorial framing
+- Be specific about pose, outfit (black latex preferred), scene, lighting
+- Include technical camera details (85mm lens, shallow depth of field, etc.)
+- Avoid explicit words, use "fashion editorial", "non-explicit", "structured material"
+
+Format as JSON array:
+[{"title":"Short description","prompt":"Full prompt text"}]
+
+Return only the JSON array, no other text.`}]
+      })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.content?.find(b => b.type==='text')?.text || '';
+    const prompts = JSON.parse(text.replace(/```json|```/g,'').trim());
+
+    el.innerHTML = prompts.map((p, i) => `
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <span style="font-family:var(--font-mono);font-size:11px;color:var(--accent);font-weight:500">${escH(p.title)}</span>
+          <div style="display:flex;gap:6px">
+            <button onclick="copyGenPrompt(${i})" style="padding:2px 8px;font-size:10px;background:none;border:1px solid var(--border2);color:var(--accent2);border-radius:3px;cursor:pointer;font-family:var(--font-mono)">📋 copy</button>
+            <button onclick="saveGenPromptToLib(${i})" style="padding:2px 8px;font-size:10px;background:none;border:1px solid var(--green);color:var(--green);border-radius:3px;cursor:pointer;font-family:var(--font-mono)">💾 save</button>
+          </div>
+        </div>
+        <div id="genPrompt_${i}" style="font-family:var(--font-mono);font-size:10px;color:var(--text3);line-height:1.6;white-space:pre-wrap">${escH(p.prompt)}</div>
+      </div>`).join('');
+
+    // Store for copy/save
+    window._generatedPrompts = prompts;
+  } catch(e) {
+    el.innerHTML = `<span style="color:var(--red);font-family:var(--font-mono);font-size:11px">Error: ${escH(e.message)}</span>`;
+  }
+}
+
+function copyGenPrompt(i) {
+  const p = window._generatedPrompts?.[i];
+  if (!p) return;
+  navigator.clipboard.writeText(p.prompt).then(() => notify('Copied!', 'success'));
+}
+
+function saveGenPromptToLib(i) {
+  const p = window._generatedPrompts?.[i];
+  if (!p) return;
+  promptLibrary.prompts.push({name: p.title, category: 'Full Prompt', text: p.prompt, tags: []});
+  markUnsaved();
+  notify('Saved to Library: ' + p.title, 'success');
+}
+
+async function exportDatasetFolder() {
+  if (!dirHandle) { notify('Open a project folder first', 'error'); return; }
+  const imgs = project.images.filter(img => img.inDataset);
+  if (!imgs.length) { notify('No images in dataset', 'error'); return; }
+  if (!confirm(`Export ${imgs.length} images + captions to /dataset/ folder?`)) return;
+
+  try {
+    const datasetDir = await dirHandle.getDirectoryHandle('dataset', {create: true});
+    let done = 0;
+    for (const img of imgs) {
+      try {
+        // Copy image
+        const srcFile = await img.fileHandle.getFile();
+        const destFh = await datasetDir.getFileHandle(img.name, {create: true});
+        const writable = await destFh.createWritable();
+        await writable.write(srcFile);
+        await writable.close();
+
+        // Write caption .txt
+        const caption = img.aiReview?.caption_kohya || img.caption?.prompt || '';
+        if (caption) {
+          const txtName = img.name.replace(/\.[^.]+$/, '.txt');
+          const txtFh = await datasetDir.getFileHandle(txtName, {create: true});
+          const txtWritable = await txtFh.createWritable();
+          await txtWritable.write(caption);
+          await txtWritable.close();
+        }
+        done++;
+      } catch(e) { console.error('Export error:', img.name, e); }
+    }
+    notify(`Exported ${done} images to /dataset/ folder ✓`, 'success');
+  } catch(e) {
+    notify('Export error: ' + e.message, 'error');
+  }
+}
 const COL_IDS = ['colGallery','colActions','colPreview','fieldsArea','colLibrary'];
 const RESIZER_IDS = ['r1','r2','r3','r4'];
 
