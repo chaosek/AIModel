@@ -1057,6 +1057,7 @@ async function scanImages() {
       training: saved.training !== undefined ? saved.training : true,
       done: saved.done || false,
       aiReview: saved.aiReview || null,
+      inDataset: saved.inDataset || false,
     });
   }
   renderGallery();
@@ -1384,6 +1385,7 @@ async function saveProject() {
         name: img.name, source: img.source, rating: img.rating,
         training: img.training, caption: img.caption, done: img.done || false,
         aiReview: img.aiReview || null,
+        inDataset: img.inDataset || false,
       }))
     };
     const fh = await dirHandle.getFileHandle('ai_caption_project.json', {create:true});
