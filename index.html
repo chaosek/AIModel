@@ -2232,15 +2232,68 @@ async function importPromptsFromFile() {
     for (const file of Array.from(input.files)) {
       const text = await file.text();
       const name = file.name.replace(/\.[^.]+$/, '');
-      if (!promptLibrary.prompts.find(p => p.name === name)) {
-        promptLibrary.prompts.push({name, category: 'Full Prompt', text: text.trim(), tags: []});
-        added++;
+
+      if (file.name.endsWith('.json')) {
+        try {
+          const data = JSON.parse(text);
+          // Support maya_library.json format: {db:{poses:[],outfits:[],...}}
+          const db = data.db || data;
+          const catMap = {
+            poses: 'Pose', outfits: 'Outfit', scenes: 'Scene',
+            identity: 'Identity', lighting: 'Lighting', photo: 'Camera', quality: 'Camera'
+          };
+          let count = 0;
+          Object.entries(catMap).forEach(([key, cat]) => {
+            if (db[key] && Array.isArray(db[key])) {
+              db[key].forEach(item => {
+                if (!promptLibrary.prompts.find(p => p.name === item.name)) {
+                  promptLibrary.prompts.push({
+                    name: item.name,
+                    category: cat,
+                    text: item.tags || '',
+                    tags: []
+                  });
+                  count++;
+                }
+              });
+            }
+          });
+          // Also support array of prompts directly
+          if (Array.isArray(data)) {
+            data.forEach(item => {
+              if (item.name && (item.text || item.tags || item.prompt)) {
+                if (!promptLibrary.prompts.find(p => p.name === item.name)) {
+                  promptLibrary.prompts.push({
+                    name: item.name,
+                    category: item.category || 'Full Prompt',
+                    text: item.text || item.tags || item.prompt || '',
+                    tags: []
+                  });
+                  count++;
+                }
+              }
+            });
+          }
+          added += count;
+        } catch(e) {
+          // Not valid JSON — import as plain text prompt
+          if (!promptLibrary.prompts.find(p => p.name === name)) {
+            promptLibrary.prompts.push({name, category: 'Full Prompt', text: text.trim(), tags: []});
+            added++;
+          }
+        }
+      } else {
+        // .txt — import as full prompt
+        if (!promptLibrary.prompts.find(p => p.name === name)) {
+          promptLibrary.prompts.push({name, category: 'Full Prompt', text: text.trim(), tags: []});
+          added++;
+        }
       }
     }
     renderLibCategories();
     renderLibPromptList();
     markUnsaved();
-    notify(`Imported ${added} prompt(s)`, 'success');
+    notify(`Imported ${added} item(s)`, 'success');
   };
   input.click();
 }
