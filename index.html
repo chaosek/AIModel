@@ -620,32 +620,6 @@
     </div>
   </div>
 
-  <div class="resizer" id="r4"></div>
-
-  <!-- COL 5: Library -->
-  <div class="col-library" id="colLibrary">
-    <div class="db-header" style="display:flex;align-items:center;justify-content:space-between">
-      <span>📚 Library</span>
-      <button class="btn" style="padding:2px 8px;font-size:10px;border-color:var(--accent2);color:var(--accent2)" onclick="importLibraryJson()">⬆ Import</button>
-    </div>
-    <div class="db-tabs">
-      <div class="db-tab active" data-dbtab="poses" onclick="switchDbTab('poses',this)">Poses</div>
-      <div class="db-tab" data-dbtab="outfits" onclick="switchDbTab('outfits',this)">Outfits</div>
-      <div class="db-tab" data-dbtab="scenes" onclick="switchDbTab('scenes',this)">Scenes</div>
-      <div class="db-tab" data-dbtab="identity" onclick="switchDbTab('identity',this)">Identity</div>
-      <div class="db-tab" data-dbtab="lighting" onclick="switchDbTab('lighting',this)">Light</div>
-      <div class="db-tab" data-dbtab="photo" onclick="switchDbTab('photo',this)">Photo</div>
-      <div class="db-tab" data-dbtab="quality" onclick="switchDbTab('quality',this)">Quality</div>
-          <div class="db-tab" data-dbtab="prompts" onclick="switchDbTab('prompts',this)">Prompts</div>
-    </div>
-    <div class="db-content" id="dbContent"></div>
-    <div class="db-add-form">
-      <input class="db-input" id="dbNewName" placeholder="Name">
-      <input class="db-input" id="dbNewTags" placeholder="Tags (comma separated)">
-      <button class="btn" style="width:100%" onclick="addDbItem()">＋ Add</button>
-    </div>
-  </div>
-
 </div><!-- end mainCols -->
 </div><!-- end sectionReview -->
 
@@ -1014,6 +988,8 @@ async function openProject() {
     await scanImages();
     notify('Project loaded: ' + dirHandle.name, 'success');
     loadColWidths();
+    initPromptLibrary();
+    if (currentMainTab === 'library') renderLibrarySection();
   } catch(e) {
     if (e.name !== 'AbortError') notify('Error: ' + e.message, 'error');
   }
@@ -1025,7 +1001,7 @@ async function loadProjectFile() {
     const f = await fh.getFile();
     const data = JSON.parse(await f.text());
     if (data.db) project.db = data.db;
-    if (data.promptLibrary) promptLibrary = data.promptLibrary;
+    if (data.promptLibrary) { promptLibrary = data.promptLibrary; project._promptLibrary = data.promptLibrary; }
     if (data.config) { config = {...config, ...data.config}; updateProjectDisplay(); }
     if (data.colWidths) project._colWidths = data.colWidths;
     project._savedImages = {};
@@ -1951,8 +1927,9 @@ function switchDbTab(tab, el) {
   renderDbContent();
 }
 function renderDbContent() {
-  const items = project.db[currentDbTab] || [];
   const el = document.getElementById('dbContent');
+  if (!el) return;
+  const items = project.db[currentDbTab] || [];
 
   if (currentDbTab === 'prompts') {
     el.innerHTML = !items.length
@@ -2092,19 +2069,24 @@ let currentLibCat = 'Full Prompt';
 let currentLibPromptIdx = null;
 
 function initPromptLibrary() {
+  // Load from project if saved there
+  if (project._promptLibrary) {
+    promptLibrary = project._promptLibrary;
+    return;
+  }
   // Migrate v1-v5 from config.promptTemplates
-  if (config.promptTemplates && config.promptTemplates.length) {
+  if (config.promptTemplates) {
     config.promptTemplates.forEach(pt => {
       if (!promptLibrary.prompts.find(p => p.name === pt.name)) {
-        promptLibrary.prompts.push({name: pt.name, category: 'Full Prompt', text: pt.text, tags: []});
+        promptLibrary.prompts.push({name: pt.name, category: 'Full Prompt', text: pt.text || pt.tags || '', tags: []});
       }
     });
   }
   // Migrate from project.db.prompts
-  if (project.db.prompts && project.db.prompts.length) {
+  if (project.db.prompts) {
     project.db.prompts.forEach(pt => {
       if (!promptLibrary.prompts.find(p => p.name === pt.name)) {
-        promptLibrary.prompts.push({name: pt.name, category: 'Full Prompt', text: pt.tags, tags: []});
+        promptLibrary.prompts.push({name: pt.name, category: 'Full Prompt', text: pt.tags || '', tags: []});
       }
     });
   }
@@ -2471,8 +2453,8 @@ async function exportDatasetFolder() {
     notify('Export error: ' + e.message, 'error');
   }
 }
-const COL_IDS = ['colGallery','colActions','colPreview','fieldsArea','colLibrary'];
-const RESIZER_IDS = ['r1','r2','r3','r4'];
+const COL_IDS = ['colGallery','colActions','colPreview','fieldsArea'];
+const RESIZER_IDS = ['r1','r2','r3'];
 
 function getColWidths() {
   return COL_IDS.map(id => {
